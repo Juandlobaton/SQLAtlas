@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: apps/parsing-engine
-        run: uv sync --dev
+        run: uv sync --extra dev
 
       - name: Lint
         working-directory: apps/parsing-engine
