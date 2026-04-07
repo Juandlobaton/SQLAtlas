@@ -1,9 +1,9 @@
 """Value Object: Database object type."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class ObjectType(str, Enum):
+class ObjectType(StrEnum):
     PROCEDURE = "procedure"
     FUNCTION = "function"
     TRIGGER = "trigger"
