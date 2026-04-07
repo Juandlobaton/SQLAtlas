@@ -1,0 +1,10 @@
+{
+  "dashboard": "Dashboard",
+  "connections": "Connections",
+  "dataLineage": "Data Lineage",
+  "sqlExplorer": "SQL Explorer",
+  "flowAnalysis": "Flow Analysis",
+  "security": "Security",
+  "documentation": "Documentation",
+  "settings": "Settings"
+}

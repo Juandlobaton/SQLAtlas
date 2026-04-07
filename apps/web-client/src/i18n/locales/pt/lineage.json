@@ -1,0 +1,58 @@
+{
+  "title": "Linhagem de Dados",
+  "subtitle": "{{objects}} objetos, {{deps}} dependências",
+  "tabs": {
+    "explorer": "Explorador de Esquemas",
+    "lineage": "Linhagem de Dados",
+    "matrix": "Matriz CRUD",
+    "impact": "Análise de Impacto"
+  },
+  "search": "Pesquisar procedimentos, funções, tabelas...",
+  "allSchemas": "Todos os esquemas",
+  "schemas": "ESQUEMAS",
+  "selectProcedure": "Selecione um procedimento da árvore de esquemas",
+  "detail": {
+    "lines_one": "{{count}} linha",
+    "lines_other": "{{count}} linhas",
+    "parameters": "Parâmetros",
+    "paramName": "Nome",
+    "paramType": "Tipo",
+    "paramMode": "Modo",
+    "documentation": "Documentação",
+    "sideEffects": "Efeitos Colaterais",
+    "securityFindings": "Descobertas de Segurança",
+    "fix": "Correção: {{recommendation}}",
+    "sourceCode": "Código Fonte",
+    "openInExplorer": "Abrir no Explorador SQL",
+    "openInFlow": "Ver em Análise de Fluxo"
+  },
+  "lineageView": {
+    "selectToViewLineage": "Selecione um procedimento para ver a linhagem",
+    "selectToSeeLineage": "Selecione um procedimento para ver sua linhagem de dados",
+    "upstream": "Chamadores (upstream)",
+    "noCallers": "Nenhum chamador encontrado",
+    "selected": "Selecionado",
+    "executionFlow": "Fluxo de Execução",
+    "downstream": "Chamados (downstream)",
+    "noDeps": "Nenhuma dependência encontrada"
+  },
+  "matrix": {
+    "procedureFunction": "Procedimento / Função",
+    "dependencies": "Dependências",
+    "empty": "Nenhuma dependência encontrada. Execute uma análise primeiro."
+  },
+  "descriptions": {
+    "explorer": "Explore esquemas de banco de dados, veja parâmetros de procedimentos, documentação auto-gerada, descobertas de segurança e código fonte.",
+    "lineage": "Rastreie chamadores upstream e dependências downstream de qualquer procedimento. Visualize a cadeia de chamadas completa.",
+    "matrix": "Veja quais procedimentos leem, escrevem ou chamam quais objetos. Identifique padrões CRUD no seu código.",
+    "impact": "Selecione qualquer objeto para descobrir todos os procedimentos que dependem dele. Essencial para avaliar o impacto de mudanças."
+  },
+  "impact": {
+    "selectObject": "Selecione um objeto para ver o que depende dele",
+    "selectToSeeImpact": "Selecione um objeto para ver seu impacto",
+    "deps_one": "{{count}} dependência",
+    "deps_other": "{{count}} dependências",
+    "description": "Os seguintes procedimentos/funções dependem deste objeto:",
+    "confidence": "confiança {{pct}}%"
+  }
+}

@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.pnp.*
+.yarn/
+
+# Build outputs
+dist/
+build/
+.next/
+*.egg-info/
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+docker/.env
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+htmlcov/
+.pytest_cache/
+
+# Turbo
+.turbo/
+
+# Docker
+docker/nginx/ssl/*.pem
+docker/nginx/ssl/*.key
+docker/nginx/ssl/*.crt
+
+# Logs
+*.log
+logs/
+
+# Secrets - NEVER commit these
+*.pem
+*.key
+credentials.json
+secrets.json
+vault-token
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Generated files
+*.pb2.py
+*.pb2_grpc.py

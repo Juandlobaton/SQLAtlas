@@ -1,0 +1,60 @@
+{
+  "title": "SQL Explorer",
+  "subtitle": "Paste SQL and analyze in real time",
+  "sqlInput": "SQL Input",
+  "placeholder": "Paste your SQL here...",
+  "charCount": "{{current}} / 500,000 characters · {{lines}} lines",
+  "emptyState": "Click Analyze to parse your SQL",
+  "parseError": "Failed to parse SQL. Please try again.",
+  "anonymous": "Anonymous",
+  "complexity": "Complexity: {{cc}} — {{level}}",
+  "tabs": {
+    "dependencies": "Dependencies",
+    "tables": "Tables",
+    "security": "Security",
+    "flow": "Flow",
+    "autoDoc": "Auto-Doc"
+  },
+  "descriptions": {
+    "dependencies": "Procedures and functions called via EXEC or function calls. Shows call confidence and whether calls are dynamic.",
+    "tables": "All tables referenced with their operations (SELECT, INSERT, UPDATE, DELETE). Identifies temporary tables.",
+    "security": "Potential vulnerabilities detected: SQL injection risks, hardcoded credentials, dangerous system functions, privilege escalation.",
+    "flow": "Step-by-step execution flow showing conditionals, loops, branches, and the order of operations.",
+    "docs": "AI-generated documentation with summary, description, parameter details, and identified side effects."
+  },
+  "empty": {
+    "dependencies": "No dependencies found",
+    "tables": "No table references found",
+    "security": "No security issues found"
+  },
+  "atLine": "at line {{line}}",
+  "secFix": "Fix: {{recommendation}}",
+  "secLine": "Line {{number}}",
+  "flowNodeTypes": {
+    "condition": "condition",
+    "call": "call",
+    "statement": "statement",
+    "error_handler": "error handler",
+    "return": "return",
+    "end": "end",
+    "loop": "loop",
+    "start": "start"
+  },
+  "autoDocLabels": {
+    "summary": "Summary",
+    "description": "Description",
+    "parameters": "Parameters",
+    "sideEffects": "Side Effects",
+    "name": "Name",
+    "type": "Type",
+    "mode": "Mode",
+    "default": "Default"
+  },
+  "procPicker": {
+    "title": "Load from connection",
+    "selectConnection": "Select connection...",
+    "searchPlaceholder": "Search procedure...",
+    "noResults": "No procedures found",
+    "lines": "lines"
+  }
+}

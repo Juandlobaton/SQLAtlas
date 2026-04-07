@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  parsing-engine:
+    name: Parsing Engine (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        working-directory: apps/parsing-engine
+        run: uv sync
+
+      - name: Lint
+        working-directory: apps/parsing-engine
+        run: uv run ruff check src/ tests/
+
+      - name: Type check
+        working-directory: apps/parsing-engine
+        run: uv run mypy src/ --ignore-missing-imports
+
+      - name: Test
+        working-directory: apps/parsing-engine
+        run: uv run pytest tests/ -v --tb=short
+
+  api-gateway:
+    name: API Gateway (NestJS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        working-directory: apps/api-gateway
+        run: npx tsc --noEmit --skipLibCheck
+
+      - name: Security audit
+        run: pnpm audit --audit-level=high || true
+
+  web-client:
+    name: Web Client (React)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        working-directory: apps/web-client
+        run: npx tsc --noEmit --skipLibCheck
+
+      - name: Build
+        working-directory: apps/web-client
+        run: pnpm build
+
+      - name: Security audit
+        run: pnpm audit --audit-level=high || true

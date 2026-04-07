@@ -1,0 +1,43 @@
+{
+  "title": "Explorador de Tablas",
+  "subtitle": "Columnas, claves foráneas, índices y procedimientos que acceden cada tabla",
+  "searchPlaceholder": "Buscar tabla...",
+  "noResults": "No se encontraron tablas",
+  "total": "{{count}} tablas",
+  "allSchemas": "Todos los schemas",
+  "allTypes": "Todos los tipos",
+  "columns": "Columnas",
+  "foreignKeys": "Claves Foráneas",
+  "indexes": "Índices",
+  "accessedBy": "Accedida por",
+  "noFK": "Sin claves foráneas",
+  "noIndexes": "Sin índices",
+  "noAccess": "Sin procedimientos que accedan",
+  "emptyState": "Seleccione una tabla para ver sus detalles",
+  "columnHeaders": {
+    "name": "Columna",
+    "type": "Tipo",
+    "nullable": "Nullable",
+    "default": "Default",
+    "key": "Clave"
+  },
+  "fkHeaders": {
+    "name": "Constraint",
+    "columns": "Columnas",
+    "references": "Referencia",
+    "onDelete": "On Delete"
+  },
+  "indexHeaders": {
+    "name": "Índice",
+    "columns": "Columnas",
+    "type": "Tipo",
+    "unique": "Único"
+  },
+  "badges": {
+    "pk": "PK",
+    "fk": "FK",
+    "table": "TABLE",
+    "view": "VIEW",
+    "rows": "{{count}} filas"
+  }
+}

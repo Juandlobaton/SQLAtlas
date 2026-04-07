@@ -1,0 +1,28 @@
+{
+  "title": "Execution Pipeline",
+  "subtitle": "Select a procedure to see its full execution pipeline with nested calls, table operations, parameters, and auto-documentation",
+  "searchPlaceholder": "Search...",
+  "noResults": "No procedures found",
+  "total": "{{count}} total",
+  "emptyState": "Select a procedure to view its execution pipeline",
+  "parseError": "Could not parse this procedure",
+  "sections": {
+    "parameters": "Parameters",
+    "pipeline": "Execution Pipeline",
+    "autoDoc": "Auto-Documentation",
+    "sideEffects": "Side Effects:"
+  },
+  "actions": {
+    "traceCallChain": "Trace call chain",
+    "viewSource": "View source code",
+    "viewFlow": "View execution flow",
+    "viewDocs": "View documentation",
+    "openInExplorer": "Open in SQL Explorer"
+  },
+  "breadcrumb": {
+    "root": "Root"
+  },
+  "drillDown": "Explore procedure",
+  "drillDownHint": "View full flow of {{name}}",
+  "stats": "{{type}} / {{lineCount}} lines / {{calls}} calls / {{tables}} table refs."
+}

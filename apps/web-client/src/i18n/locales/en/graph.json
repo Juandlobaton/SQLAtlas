@@ -1,0 +1,28 @@
+{
+  "title": "Dependency Graph",
+  "subtitle": "Showing {{nodes}} of {{total}} nodes, {{edges}} edges",
+  "allSchemas": "All schemas",
+  "views": {
+    "connected": "Connected Only",
+    "businessLogic": "Business Logic",
+    "highComplexity": "High Complexity",
+    "all": "All ({{count}})"
+  },
+  "layouts": {
+    "etl": "ETL Flow",
+    "hierarchy": "Hierarchy",
+    "concentric": "Concentric",
+    "force": "Force",
+    "circle": "Circular"
+  },
+  "clearTrace": "Clear trace",
+  "emptyState": "No nodes match the current filters",
+  "emptyHint": "Try the \"All\" view or a different schema filter",
+  "legend": {
+    "nodes": "Nodes:",
+    "edges": "Edges:"
+  },
+  "hint": "Click a node for details. Double-click to trace call chain.",
+  "securityIssues_one": "{{count}} security issue",
+  "securityIssues_other": "{{count}} security issues"
+}

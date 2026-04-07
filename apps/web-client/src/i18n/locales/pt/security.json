@@ -1,0 +1,14 @@
+{
+  "title": "Scanner de Segurança",
+  "subtitle": "{{count}} descobertas em {{procedures}} procedimentos",
+  "complexityDistribution": "Distribuição de Complexidade ({{count}} procedimentos)",
+  "searchPlaceholder": "Pesquisar procedimentos ou descobertas...",
+  "emptyState": {
+    "title": "Nenhum Problema de Segurança Encontrado",
+    "message": "Os {{count}} procedimentos passaram no escaneamento de segurança.",
+    "hint": "Tente analisar um banco de dados com SQL dinâmico, credenciais hardcoded ou xp_cmdshell para ver descobertas."
+  },
+  "fix": "Correção: {{recommendation}}",
+  "line": "Linha {{number}}",
+  "traceCallChain": "Rastrear cadeia de chamadas"
+}

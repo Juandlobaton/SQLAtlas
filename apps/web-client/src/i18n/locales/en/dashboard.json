@@ -1,0 +1,14 @@
+{
+  "title": "Dashboard",
+  "subtitle": "Summary of your database forensic analysis",
+  "stats": {
+    "connections": "Connections",
+    "procedures": "Procedures",
+    "dependencies": "Dependencies",
+    "tables": "Tables",
+    "schemas": "Schemas",
+    "securityIssues": "Security Issues"
+  },
+  "recentAnalyses": "Recent Analyses",
+  "securityAlerts": "Security Alerts"
+}

@@ -1,0 +1,43 @@
+{
+  "title": "Explorador de Tabelas",
+  "subtitle": "Colunas, chaves estrangeiras, índices e procedimentos que acessam cada tabela",
+  "searchPlaceholder": "Pesquisar tabela...",
+  "noResults": "Nenhuma tabela encontrada",
+  "total": "{{count}} tabelas",
+  "allSchemas": "Todos os schemas",
+  "allTypes": "Todos os tipos",
+  "columns": "Colunas",
+  "foreignKeys": "Chaves Estrangeiras",
+  "indexes": "Índices",
+  "accessedBy": "Acessada por",
+  "noFK": "Sem chaves estrangeiras",
+  "noIndexes": "Sem índices",
+  "noAccess": "Sem procedimentos que acessam",
+  "emptyState": "Selecione uma tabela para ver seus detalhes",
+  "columnHeaders": {
+    "name": "Coluna",
+    "type": "Tipo",
+    "nullable": "Nullable",
+    "default": "Default",
+    "key": "Chave"
+  },
+  "fkHeaders": {
+    "name": "Constraint",
+    "columns": "Colunas",
+    "references": "Referência",
+    "onDelete": "On Delete"
+  },
+  "indexHeaders": {
+    "name": "Índice",
+    "columns": "Colunas",
+    "type": "Tipo",
+    "unique": "Único"
+  },
+  "badges": {
+    "pk": "PK",
+    "fk": "FK",
+    "table": "TABLE",
+    "view": "VIEW",
+    "rows": "{{count}} linhas"
+  }
+}

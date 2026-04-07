@@ -1,0 +1,12 @@
+{
+  "dashboard": "Panel Principal",
+  "connections": "Conexiones",
+  "dataLineage": "Linaje de Datos",
+  "sqlExplorer": "Explorador SQL",
+  "flowAnalysis": "Análisis de Flujo",
+  "security": "Seguridad",
+  "documentation": "Documentación",
+  "tables": "Tablas",
+  "erDiagram": "Diagrama ER",
+  "settings": "Configuración"
+}

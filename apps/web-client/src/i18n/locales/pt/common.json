@@ -1,0 +1,155 @@
+{
+  "appName": "SQLAtlas",
+  "tagline": "Plataforma de Linhagem de Dados",
+  "loading": "Carregando...",
+  "error": "Erro",
+  "save": "Salvar",
+  "cancel": "Cancelar",
+  "delete": "Excluir",
+  "edit": "Editar",
+  "close": "Fechar",
+  "search": "Pesquisar",
+  "searchPlaceholder": "Pesquisar...",
+  "analyze": "Analisar",
+  "analyzing": "Analisando...",
+  "test": "Testar",
+  "confirm": "Confirmar",
+  "back": "Voltar",
+  "next": "Próximo",
+  "submit": "Enviar",
+  "retry": "Tentar novamente",
+  "reloadPage": "Recarregar Página",
+  "noData": "Sem dados",
+  "viewMore": "Ver mais",
+  "collapse": "Recolher",
+  "expand": "Expandir",
+  "errorBoundary": {
+    "title": "Algo deu errado",
+    "defaultMessage": "Ocorreu um erro inesperado",
+    "reload": "Recarregar Página"
+  },
+  "status": {
+    "connected": "conectado",
+    "failed": "falhou",
+    "untested": "não testado",
+    "completed": "concluído",
+    "running": "executando",
+    "pending": "pendente",
+    "healthy": "Ativo",
+    "down": "Inativo",
+    "checking": "Verificando..."
+  },
+  "severity": {
+    "critical": "crítico",
+    "high": "alto",
+    "medium": "médio",
+    "low": "baixo",
+    "info": "info"
+  },
+  "complexity": {
+    "low": "baixo",
+    "moderate": "moderado",
+    "high": "alto",
+    "critical": "crítico"
+  },
+  "operations": {
+    "select": "SELECT",
+    "insert": "INSERT",
+    "update": "UPDATE",
+    "delete": "DELETE",
+    "exec": "EXEC"
+  },
+  "nodeTypes": {
+    "procedure": "Procedimento",
+    "function": "Função",
+    "table": "Tabela",
+    "trigger": "Trigger",
+    "external": "Externo"
+  },
+  "edgeTypes": {
+    "calls": "Chamadas",
+    "reads": "Leituras",
+    "writes": "Escritas",
+    "dynamic": "Dinâmico"
+  },
+  "theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "lightMode": "Modo claro",
+    "darkMode": "Modo escuro"
+  },
+  "metrics": {
+    "complexity": "Complexidade",
+    "risk": "Risco",
+    "lines": "Linhas",
+    "security": "Segurança",
+    "issues": "problemas",
+    "clean": "Limpo"
+  },
+  "actions": {
+    "traceCallChain": "Rastrear cadeia de chamadas",
+    "viewSource": "Ver código fonte",
+    "viewFlow": "Ver fluxo de execução",
+    "viewDocs": "Ver documentação"
+  },
+  "legend": {
+    "nodeTypes": "Tipos de Nó",
+    "edgeTypes": "Tipos de Aresta"
+  },
+  "auth": {
+    "logout": "Sair",
+    "signIn": "Entrar",
+    "register": "Registrar",
+    "createAccount": "Criar Conta",
+    "email": "E-mail",
+    "password": "Senha",
+    "passwordPlaceholder": "Mínimo 8 caracteres",
+    "name": "Seu Nome",
+    "namePlaceholder": "João Silva",
+    "orgName": "Nome da Organização",
+    "orgPlaceholder": "Minha Empresa",
+    "orgSlug": "Slug da Organização",
+    "orgSlugPlaceholder": "minha-empresa"
+  },
+  "badges": {
+    "temp": "temporário",
+    "dynamic": "dinâmico",
+    "params_one": "{{count}} param",
+    "params_other": "{{count}} params",
+    "issues_one": "{{count}} problema",
+    "issues_other": "{{count}} problemas",
+    "objects_one": "{{count}} objeto",
+    "objects_other": "{{count}} objetos",
+    "nodes_one": "{{count}} nó",
+    "nodes_other": "{{count}} nós",
+    "edges_one": "{{count}} aresta",
+    "edges_other": "{{count}} arestas",
+    "lines_one": "{{count}} linha",
+    "lines_other": "{{count}} linhas"
+  },
+  "dialects": {
+    "tsql": "T-SQL (SQL Server)",
+    "plpgsql": "PL/pgSQL (PostgreSQL)",
+    "plsql": "PL/SQL (Oracle)"
+  },
+  "tooltips": {
+    "cc": "Complexidade Ciclomática: mede quantos caminhos de execução o código tem. Quanto maior, mais difícil de testar e manter.",
+    "ccShort": "Complexidade Ciclomática",
+    "riskLow": "Risco baixo: código simples, fácil de manter (CC ≤ 5)",
+    "riskModerate": "Risco moderado: complexidade aceitável, revisar com cuidado (CC 6-10)",
+    "riskHigh": "Risco alto: código complexo, difícil de testar (CC 11-20)",
+    "riskCritical": "Risco crítico: código muito complexo, considerar refatoração (CC > 20)",
+    "confidence": "Confiança: quão certa é a análise de que esta dependência existe. 100% = confirmado, menor = detectado por heurísticas.",
+    "crud": "CRUD: Criar, Ler, Atualizar, Excluir — as 4 operações básicas de dados",
+    "etl": "ETL: Extrair, Transformar, Carregar — padrão de fluxo de dados",
+    "upstream": "Upstream: procedimentos que chamam este (quem me chama)",
+    "downstream": "Downstream: procedimentos e tabelas que este chama (quem eu chamo)",
+    "lineage": "Linhagem: rastreia a origem e destino dos dados através de procedimentos",
+    "exec": "EXEC: instrução SQL que executa outro procedimento armazenado",
+    "dynamic": "Dinâmico: o nome do procedimento é construído em tempo de execução, dificultando a análise estática",
+    "impact": "Análise de Impacto: mostra o que seria afetado se este objeto for modificado",
+    "depth": "Profundidade de aninhamento: quantos níveis de blocos IF/WHILE/TRY estão aninhados",
+    "branches": "Ramificações: número de bifurcações condicionais (IF, CASE, etc.)"
+  }
+}

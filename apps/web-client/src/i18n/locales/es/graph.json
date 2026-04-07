@@ -1,0 +1,28 @@
+{
+  "title": "Grafo de Dependencias",
+  "subtitle": "Mostrando {{nodes}} de {{total}} nodos, {{edges}} aristas",
+  "allSchemas": "Todos los esquemas",
+  "views": {
+    "connected": "Solo Conectados",
+    "businessLogic": "Lógica de Negocio",
+    "highComplexity": "Alta Complejidad",
+    "all": "Todos ({{count}})"
+  },
+  "layouts": {
+    "etl": "Flujo ETL",
+    "hierarchy": "Jerarquía",
+    "concentric": "Concéntrico",
+    "force": "Fuerza",
+    "circle": "Circular"
+  },
+  "clearTrace": "Limpiar traza",
+  "emptyState": "No hay nodos que coincidan con los filtros actuales",
+  "emptyHint": "Pruebe la vista \"Todos\" o un filtro de esquema diferente",
+  "legend": {
+    "nodes": "Nodos:",
+    "edges": "Aristas:"
+  },
+  "hint": "Clic en un nodo para detalles. Doble clic para trazar cadena de llamadas.",
+  "securityIssues_one": "{{count}} problema de seguridad",
+  "securityIssues_other": "{{count}} problemas de seguridad"
+}

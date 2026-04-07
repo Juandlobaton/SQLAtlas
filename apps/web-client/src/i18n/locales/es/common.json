@@ -1,0 +1,168 @@
+{
+  "appName": "SQLAtlas",
+  "tagline": "Plataforma de Linaje de Datos",
+  "loading": "Cargando...",
+  "error": "Error",
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "delete": "Eliminar",
+  "edit": "Editar",
+  "close": "Cerrar",
+  "search": "Buscar",
+  "searchPlaceholder": "Buscar...",
+  "analyze": "Analizar",
+  "analyzing": "Analizando...",
+  "test": "Probar",
+  "confirm": "Confirmar",
+  "back": "Volver",
+  "next": "Siguiente",
+  "submit": "Enviar",
+  "retry": "Reintentar",
+  "reloadPage": "Recargar Página",
+  "noData": "Sin datos",
+  "viewMore": "Ver más",
+  "collapse": "Colapsar",
+  "expand": "Expandir",
+  "errorBoundary": {
+    "title": "Algo salió mal",
+    "defaultMessage": "Ha ocurrido un error inesperado",
+    "reload": "Recargar Página"
+  },
+  "status": {
+    "connected": "conectado",
+    "failed": "fallido",
+    "untested": "sin probar",
+    "completed": "completado",
+    "running": "ejecutando",
+    "pending": "pendiente",
+    "healthy": "Activo",
+    "down": "Caído",
+    "checking": "Verificando..."
+  },
+  "severity": {
+    "critical": "crítico",
+    "high": "alto",
+    "medium": "medio",
+    "low": "bajo",
+    "info": "info"
+  },
+  "complexity": {
+    "low": "bajo",
+    "moderate": "moderado",
+    "high": "alto",
+    "critical": "crítico"
+  },
+  "operations": {
+    "select": "SELECT",
+    "insert": "INSERT",
+    "update": "UPDATE",
+    "delete": "DELETE",
+    "exec": "EXEC"
+  },
+  "nodeTypes": {
+    "procedure": "Procedimiento",
+    "function": "Función",
+    "table": "Tabla",
+    "trigger": "Trigger",
+    "external": "Externo"
+  },
+  "edgeTypes": {
+    "calls": "Llamadas",
+    "reads": "Lecturas",
+    "writes": "Escrituras",
+    "dynamic": "Dinámico"
+  },
+  "theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "lightMode": "Modo claro",
+    "darkMode": "Modo oscuro"
+  },
+  "metrics": {
+    "complexity": "Complejidad",
+    "risk": "Riesgo",
+    "lines": "Líneas",
+    "security": "Seguridad",
+    "issues": "problemas",
+    "clean": "Limpio"
+  },
+  "actions": {
+    "traceCallChain": "Trazar cadena de llamadas",
+    "viewSource": "Ver código fuente",
+    "viewFlow": "Ver flujo de ejecución",
+    "viewDocs": "Ver documentación"
+  },
+  "legend": {
+    "nodeTypes": "Tipos de Nodo",
+    "edgeTypes": "Tipos de Arista"
+  },
+  "auth": {
+    "logout": "Cerrar sesión",
+    "signIn": "Iniciar Sesión",
+    "register": "Registrarse",
+    "createAccount": "Crear Cuenta",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Mínimo 8 caracteres",
+    "name": "Tu Nombre",
+    "namePlaceholder": "Juan Pérez",
+    "orgName": "Nombre de Organización",
+    "orgPlaceholder": "Mi Empresa",
+    "orgSlug": "Slug de Organización",
+    "orgSlugPlaceholder": "mi-empresa",
+    "registrationClosed": "El registro está deshabilitado. Contacta a tu administrador."
+  },
+  "setup": {
+    "title": "Configuración Inicial",
+    "subtitle": "Configura tu instancia de SQLAtlas",
+    "welcome": "Bienvenido a SQLAtlas",
+    "description": "Crea tu cuenta de administrador y organización para comenzar.",
+    "adminSection": "Cuenta de Administrador",
+    "orgSection": "Organización",
+    "complete": "Completar Configuración",
+    "completing": "Configurando...",
+    "alreadySetup": "Esta instancia ya ha sido configurada.",
+    "goToLogin": "Ir a Iniciar Sesión"
+  },
+  "badges": {
+    "temp": "temporal",
+    "dynamic": "dinámico",
+    "params_one": "{{count}} param",
+    "params_other": "{{count}} params",
+    "issues_one": "{{count}} problema",
+    "issues_other": "{{count}} problemas",
+    "objects_one": "{{count}} objeto",
+    "objects_other": "{{count}} objetos",
+    "nodes_one": "{{count}} nodo",
+    "nodes_other": "{{count}} nodos",
+    "edges_one": "{{count}} arista",
+    "edges_other": "{{count}} aristas",
+    "lines_one": "{{count}} línea",
+    "lines_other": "{{count}} líneas"
+  },
+  "dialects": {
+    "tsql": "T-SQL (SQL Server)",
+    "plpgsql": "PL/pgSQL (PostgreSQL)",
+    "plsql": "PL/SQL (Oracle)"
+  },
+  "tooltips": {
+    "cc": "Complejidad Ciclomática: mide cuántos caminos de ejecución tiene el código. A mayor número, más difícil de probar y mantener.",
+    "ccShort": "Complejidad Ciclomática",
+    "riskLow": "Bajo riesgo: código simple, fácil de mantener (CC ≤ 5)",
+    "riskModerate": "Riesgo moderado: complejidad aceptable, revisar con cuidado (CC 6-10)",
+    "riskHigh": "Riesgo alto: código complejo, difícil de probar (CC 11-20)",
+    "riskCritical": "Riesgo crítico: código muy complejo, considerar refactorización (CC > 20)",
+    "confidence": "Confianza: qué tan seguro es el análisis de que esta dependencia existe. 100% = confirmado, menor = detectado por heurísticas.",
+    "crud": "CRUD: Crear, Leer, Actualizar, Eliminar — las 4 operaciones básicas de datos",
+    "etl": "ETL: Extraer, Transformar, Cargar — patrón de flujo de datos",
+    "upstream": "Upstream: procedimientos que llaman a este (quién me invoca)",
+    "downstream": "Downstream: procedimientos y tablas que este invoca (a quién llamo)",
+    "lineage": "Linaje: rastrea el origen y destino de los datos a través de procedimientos",
+    "exec": "EXEC: instrucción SQL que ejecuta otro procedimiento almacenado",
+    "dynamic": "Dinámico: el nombre del procedimiento se construye en tiempo de ejecución, lo que dificulta el análisis estático",
+    "impact": "Análisis de Impacto: muestra qué se afectaría si se modifica este objeto",
+    "depth": "Profundidad de anidamiento: cuántos niveles de bloques IF/WHILE/TRY están anidados",
+    "branches": "Ramas: número de bifurcaciones condicionales (IF, CASE, etc.)"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "title": "Conexiones de Base de Datos",
+  "subtitle": "Administrar bases de datos objetivo para análisis",
+  "addConnection": "Agregar Conexión",
+  "newConnection": "Nueva Conexión de Base de Datos",
+  "form": {
+    "name": "Nombre de Conexión",
+    "namePlaceholder": "Mi Base de Datos",
+    "host": "Host",
+    "hostPlaceholder": "localhost",
+    "port": "Puerto",
+    "database": "Base de Datos",
+    "databasePlaceholder": "mibd",
+    "username": "Usuario",
+    "usernamePlaceholder": "usuario",
+    "password": "Contraseña",
+    "passwordPlaceholder": "********",
+    "passwordTestPlaceholder": "Contraseña para probar/analizar",
+    "engine": {
+      "sqlserver": "SQL Server",
+      "postgresql": "PostgreSQL",
+      "oracle": "Oracle"
+    }
+  },
+  "actions": {
+    "save": "Guardar Conexión",
+    "saving": "Guardando...",
+    "test": "Probar",
+    "analyze": "Analizar",
+    "cancel": "Cancelar"
+  },
+  "empty": "Sin conexiones aún. Agregue su primera base de datos.",
+  "testedAt": "Probado {{date}}",
+  "toast": {
+    "created": "Conexión creada",
+    "createdMsg": "{{name}} agregada exitosamente",
+    "createFailed": "Error al crear conexión",
+    "passwordRequired": "Contraseña requerida",
+    "passwordRequiredMsg": "Ingrese la contraseña de la base de datos para probar",
+    "testSuccess": "Conexión exitosa",
+    "testSuccessMsg": "{{latencyMs}}ms — {{functions}} funciones, {{procedures}} procedimientos",
+    "testFailed": "Conexión fallida",
+    "analysisStarted": "Análisis iniciado",
+    "analysisStartedMsg": "Trabajo {{jobId}}... ejecutándose. Revise la página de grafo para resultados.",
+    "analysisFailed": "Análisis fallido",
+    "deleted": "Conexión eliminada",
+    "deletedMsg": "{{name}} eliminada",
+    "deleteFailed": "Error al eliminar"
+  }
+}

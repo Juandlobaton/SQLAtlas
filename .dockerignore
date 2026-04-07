@@ -1,0 +1,12 @@
+**/node_modules
+**/.venv
+**/.git
+**/dist
+**/.next
+**/coverage
+**/.pytest_cache
+**/__pycache__
+apps/web-client
+docker
+.env
+*.md

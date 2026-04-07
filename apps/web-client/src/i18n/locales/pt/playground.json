@@ -1,0 +1,60 @@
+{
+  "title": "Explorador SQL",
+  "subtitle": "Cole SQL e analise em tempo real",
+  "sqlInput": "Entrada SQL",
+  "placeholder": "Cole seu SQL aqui...",
+  "charCount": "{{current}} / 500.000 caracteres · {{lines}} linhas",
+  "emptyState": "Clique em Analisar para parsear seu SQL",
+  "parseError": "Erro ao parsear SQL. Tente novamente.",
+  "anonymous": "Anônimo",
+  "complexity": "Complexidade: {{cc}} — {{level}}",
+  "tabs": {
+    "dependencies": "Dependências",
+    "tables": "Tabelas",
+    "security": "Segurança",
+    "flow": "Fluxo",
+    "autoDoc": "Auto-Doc"
+  },
+  "descriptions": {
+    "dependencies": "Procedimentos e funções chamados via EXEC ou chamadas de função. Mostra a confiança da chamada e se são dinâmicas.",
+    "tables": "Todas as tabelas referenciadas com suas operações (SELECT, INSERT, UPDATE, DELETE). Identifica tabelas temporárias.",
+    "security": "Vulnerabilidades potenciais detectadas: riscos de injeção SQL, credenciais hardcoded, funções de sistema perigosas, escalação de privilégios.",
+    "flow": "Fluxo de execução passo a passo mostrando condicionais, loops, ramificações e a ordem de operações.",
+    "docs": "Documentação gerada por IA com resumo, descrição, detalhes de parâmetros e efeitos colaterais identificados."
+  },
+  "empty": {
+    "dependencies": "Nenhuma dependência encontrada",
+    "tables": "Nenhuma referência a tabelas encontrada",
+    "security": "Nenhum problema de segurança encontrado"
+  },
+  "atLine": "na linha {{line}}",
+  "secFix": "Correção: {{recommendation}}",
+  "secLine": "Linha {{number}}",
+  "flowNodeTypes": {
+    "condition": "condição",
+    "call": "chamada",
+    "statement": "sentença",
+    "error_handler": "tratamento de erro",
+    "return": "retorno",
+    "end": "fim",
+    "loop": "loop",
+    "start": "início"
+  },
+  "autoDocLabels": {
+    "summary": "Resumo",
+    "description": "Descrição",
+    "parameters": "Parâmetros",
+    "sideEffects": "Efeitos Colaterais",
+    "name": "Nome",
+    "type": "Tipo",
+    "mode": "Modo",
+    "default": "Padrão"
+  },
+  "procPicker": {
+    "title": "Carregar de conexão",
+    "selectConnection": "Selecionar conexão...",
+    "searchPlaceholder": "Pesquisar procedimento...",
+    "noResults": "Nenhum procedimento encontrado",
+    "lines": "linhas"
+  }
+}

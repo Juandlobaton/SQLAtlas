@@ -1,0 +1,58 @@
+{
+  "title": "Linaje de Datos",
+  "subtitle": "{{objects}} objetos, {{deps}} dependencias",
+  "tabs": {
+    "explorer": "Explorador de Esquemas",
+    "lineage": "Linaje de Datos",
+    "matrix": "Matriz CRUD",
+    "impact": "Análisis de Impacto"
+  },
+  "search": "Buscar procedimientos, funciones, tablas...",
+  "allSchemas": "Todos los esquemas",
+  "schemas": "ESQUEMAS",
+  "selectProcedure": "Seleccione un procedimiento del árbol de esquemas",
+  "detail": {
+    "lines_one": "{{count}} línea",
+    "lines_other": "{{count}} líneas",
+    "parameters": "Parámetros",
+    "paramName": "Nombre",
+    "paramType": "Tipo",
+    "paramMode": "Modo",
+    "documentation": "Documentación",
+    "sideEffects": "Efectos Secundarios",
+    "securityFindings": "Hallazgos de Seguridad",
+    "fix": "Corrección: {{recommendation}}",
+    "sourceCode": "Código Fuente",
+    "openInExplorer": "Abrir en Explorador SQL",
+    "openInFlow": "Ver en Análisis de Flujo"
+  },
+  "lineageView": {
+    "selectToViewLineage": "Seleccione un procedimiento para ver el linaje",
+    "selectToSeeLineage": "Seleccione un procedimiento para ver su linaje de datos",
+    "upstream": "Invocadores (upstream)",
+    "noCallers": "No se encontraron invocadores",
+    "selected": "Seleccionado",
+    "executionFlow": "Flujo de Ejecución",
+    "downstream": "Invocados (downstream)",
+    "noDeps": "No se encontraron dependencias"
+  },
+  "matrix": {
+    "procedureFunction": "Procedimiento / Función",
+    "dependencies": "Dependencias",
+    "empty": "No se encontraron dependencias. Ejecute un análisis primero."
+  },
+  "descriptions": {
+    "explorer": "Explore esquemas de base de datos, vea parámetros de procedimientos, documentación auto-generada, hallazgos de seguridad y código fuente.",
+    "lineage": "Trace invocadores upstream y dependencias downstream de cualquier procedimiento. Visualice la cadena de llamadas completa.",
+    "matrix": "Vea qué procedimientos leen, escriben o llaman a qué objetos. Identifique patrones CRUD en su código.",
+    "impact": "Seleccione cualquier objeto para descubrir todos los procedimientos que dependen de él. Esencial para evaluar el impacto de cambios."
+  },
+  "impact": {
+    "selectObject": "Seleccione un objeto para ver qué depende de él",
+    "selectToSeeImpact": "Seleccione un objeto para ver su impacto",
+    "deps_one": "{{count}} dependencia",
+    "deps_other": "{{count}} dependencias",
+    "description": "Los siguientes procedimientos/funciones dependen de este objeto:",
+    "confidence": "confianza {{pct}}%"
+  }
+}

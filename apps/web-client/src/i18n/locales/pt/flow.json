@@ -1,0 +1,52 @@
+{
+  "title": "Pipeline de Execução",
+  "subtitle": "Selecione um procedimento para ver seu pipeline de execução completo com chamadas aninhadas, operações de tabelas, parâmetros e auto-documentação",
+  "searchPlaceholder": "Pesquisar...",
+  "noResults": "Nenhum procedimento encontrado",
+  "total": "{{count}} total",
+  "emptyState": "Selecione um procedimento para ver seu pipeline de execução",
+  "parseError": "Não foi possível parsear este procedimento",
+  "sections": {
+    "parameters": "Parâmetros",
+    "pipeline": "Pipeline de Execução",
+    "autoDoc": "Auto-Documentação",
+    "sideEffects": "Efeitos Colaterais:"
+  },
+  "actions": {
+    "traceCallChain": "Rastrear cadeia de chamadas",
+    "viewSource": "Ver código fonte",
+    "viewFlow": "Ver fluxo de execução",
+    "viewDocs": "Ver documentação",
+    "openInExplorer": "Abrir no Explorador SQL"
+  },
+  "breadcrumb": {
+    "root": "Raiz"
+  },
+  "drillDown": "Explorar procedimento",
+  "drillDownHint": "Ver fluxo completo de {{name}}",
+  "variableTrace": {
+    "title": "Variáveis",
+    "searchVariable": "Pesquisar variável...",
+    "noVariables": "Nenhuma variável encontrada",
+    "categories": {
+      "parameters": "Parâmetros",
+      "localVariables": "Variáveis Locais",
+      "tempTables": "Tabelas Temporárias"
+    },
+    "types": {
+      "declare": "Declaração",
+      "set": "Atribuição",
+      "parameter_in": "Parâmetro IN",
+      "parameter_out": "Parâmetro OUT",
+      "where_clause": "WHERE",
+      "insert_value": "INSERT",
+      "update_set": "UPDATE SET",
+      "exec_argument": "Argumento EXEC",
+      "condition": "Condição",
+      "select_into": "SELECT INTO",
+      "return": "RETURN"
+    },
+    "occurrences": "{{count}} usos"
+  },
+  "stats": "{{type}} / {{lineCount}} linhas / {{calls}} chamadas / {{tables}} refs. de tabelas"
+}

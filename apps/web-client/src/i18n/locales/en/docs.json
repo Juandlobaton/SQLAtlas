@@ -1,0 +1,30 @@
+{
+  "title": "Documentation and Execution Examples",
+  "subtitle": "Learn how SQLAtlas analyzes stored procedures across different database engines",
+  "filters": {
+    "all": "All",
+    "tsql": "T-SQL",
+    "plpgsql": "PL/pgSQL",
+    "plsql": "PL/SQL"
+  },
+  "tabs": {
+    "trace": "Execution Trace",
+    "source": "Source Code",
+    "dependencies": "Dependencies",
+    "security": "Security"
+  },
+  "traceInstruction": "Step-by-step execution trace showing how data flows through the procedure:",
+  "step": "STEP {{number}}",
+  "line": "Line {{number}}",
+  "stepTypes": {
+    "entry": "entry",
+    "condition": "condition",
+    "query": "query",
+    "call": "call",
+    "write": "write",
+    "return": "return",
+    "error": "error"
+  },
+  "procedureDeps": "Procedure Dependencies ({{count}})",
+  "tableAccess": "Table Access ({{count}})"
+}

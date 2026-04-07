@@ -1,0 +1,50 @@
+{
+  "title": "Conexões de Banco de Dados",
+  "subtitle": "Gerenciar bancos de dados alvo para análise",
+  "addConnection": "Adicionar Conexão",
+  "newConnection": "Nova Conexão de Banco de Dados",
+  "form": {
+    "name": "Nome da Conexão",
+    "namePlaceholder": "Meu Banco de Dados",
+    "host": "Host",
+    "hostPlaceholder": "localhost",
+    "port": "Porta",
+    "database": "Banco de Dados",
+    "databasePlaceholder": "meubd",
+    "username": "Usuário",
+    "usernamePlaceholder": "usuário",
+    "password": "Senha",
+    "passwordPlaceholder": "********",
+    "passwordTestPlaceholder": "Senha para testar/analisar",
+    "engine": {
+      "sqlserver": "SQL Server",
+      "postgresql": "PostgreSQL",
+      "oracle": "Oracle"
+    }
+  },
+  "actions": {
+    "save": "Salvar Conexão",
+    "saving": "Salvando...",
+    "test": "Testar",
+    "analyze": "Analisar",
+    "cancel": "Cancelar"
+  },
+  "empty": "Sem conexões ainda. Adicione seu primeiro banco de dados.",
+  "testedAt": "Testado {{date}}",
+  "toast": {
+    "created": "Conexão criada",
+    "createdMsg": "{{name}} adicionada com sucesso",
+    "createFailed": "Erro ao criar conexão",
+    "passwordRequired": "Senha obrigatória",
+    "passwordRequiredMsg": "Insira a senha do banco de dados para testar",
+    "testSuccess": "Conexão bem-sucedida",
+    "testSuccessMsg": "{{latencyMs}}ms — {{functions}} funções, {{procedures}} procedimentos",
+    "testFailed": "Conexão falhou",
+    "analysisStarted": "Análise iniciada",
+    "analysisStartedMsg": "Trabalho {{jobId}}... executando. Verifique a página de grafo para resultados.",
+    "analysisFailed": "Análise falhou",
+    "deleted": "Conexão excluída",
+    "deletedMsg": "{{name}} excluída",
+    "deleteFailed": "Erro ao excluir"
+  }
+}

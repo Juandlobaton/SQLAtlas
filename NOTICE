@@ -1,0 +1,28 @@
+SQLAtlas
+Copyright 2026 SQLAtlas Contributors
+
+This product includes software developed by the SQLAtlas project
+(https://github.com/sqlatlas/sqlatlas).
+
+This product is built upon these open-source projects:
+
+Core Dependencies:
+- SQLGlot (https://github.com/tobymao/sqlglot) - MIT License
+  Multi-dialect SQL parser by Toby Mao. The foundation of all SQL analysis in SQLAtlas.
+- FastAPI (https://github.com/tiangolo/fastapi) - MIT License
+  High-performance Python web framework by Sebastian Ramirez.
+- NestJS (https://github.com/nestjs/nest) - MIT License
+  Progressive Node.js framework by Kamil Mysliwiec.
+- React (https://github.com/facebook/react) - MIT License
+  UI library by Meta.
+- Cytoscape.js (https://github.com/cytoscape/cytoscape.js) - MIT License
+  Graph visualization library by the Cytoscape Consortium.
+
+Infrastructure:
+- TypeORM (https://github.com/typeorm/typeorm) - MIT License
+- Tailwind CSS (https://github.com/tailwindlabs/tailwindcss) - MIT License
+- Vite (https://github.com/vitejs/vite) - MIT License
+- Zustand (https://github.com/pmndrs/zustand) - MIT License
+- Pydantic (https://github.com/pydantic/pydantic) - MIT License
+- Passport.js (https://github.com/jaredhanson/passport) - MIT License
+- Helmet.js (https://github.com/helmetjs/helmet) - MIT License

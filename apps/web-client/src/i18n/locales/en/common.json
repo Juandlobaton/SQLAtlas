@@ -1,0 +1,168 @@
+{
+  "appName": "SQLAtlas",
+  "tagline": "Data Lineage Platform",
+  "loading": "Loading...",
+  "error": "Error",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "search": "Search",
+  "searchPlaceholder": "Search...",
+  "analyze": "Analyze",
+  "analyzing": "Analyzing...",
+  "test": "Test",
+  "confirm": "Confirm",
+  "back": "Back",
+  "next": "Next",
+  "submit": "Submit",
+  "retry": "Retry",
+  "reloadPage": "Reload Page",
+  "noData": "No data",
+  "viewMore": "View more",
+  "collapse": "Collapse",
+  "expand": "Expand",
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "defaultMessage": "An unexpected error occurred",
+    "reload": "Reload Page"
+  },
+  "status": {
+    "connected": "connected",
+    "failed": "failed",
+    "untested": "untested",
+    "completed": "completed",
+    "running": "running",
+    "pending": "pending",
+    "healthy": "Healthy",
+    "down": "Down",
+    "checking": "Checking..."
+  },
+  "severity": {
+    "critical": "critical",
+    "high": "high",
+    "medium": "medium",
+    "low": "low",
+    "info": "info"
+  },
+  "complexity": {
+    "low": "low",
+    "moderate": "moderate",
+    "high": "high",
+    "critical": "critical"
+  },
+  "operations": {
+    "select": "SELECT",
+    "insert": "INSERT",
+    "update": "UPDATE",
+    "delete": "DELETE",
+    "exec": "EXEC"
+  },
+  "nodeTypes": {
+    "procedure": "Procedure",
+    "function": "Function",
+    "table": "Table",
+    "trigger": "Trigger",
+    "external": "External"
+  },
+  "edgeTypes": {
+    "calls": "Calls",
+    "reads": "Reads",
+    "writes": "Writes",
+    "dynamic": "Dynamic"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode"
+  },
+  "metrics": {
+    "complexity": "Complexity",
+    "risk": "Risk",
+    "lines": "Lines",
+    "security": "Security",
+    "issues": "issues",
+    "clean": "Clean"
+  },
+  "actions": {
+    "traceCallChain": "Trace call chain",
+    "viewSource": "View source code",
+    "viewFlow": "View execution flow",
+    "viewDocs": "View documentation"
+  },
+  "legend": {
+    "nodeTypes": "Node Types",
+    "edgeTypes": "Edge Types"
+  },
+  "auth": {
+    "logout": "Logout",
+    "signIn": "Sign In",
+    "register": "Register",
+    "createAccount": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "passwordPlaceholder": "Min 8 characters",
+    "name": "Your Name",
+    "namePlaceholder": "John Doe",
+    "orgName": "Organization Name",
+    "orgPlaceholder": "My Company",
+    "orgSlug": "Organization Slug",
+    "orgSlugPlaceholder": "my-company",
+    "registrationClosed": "Registration is disabled. Contact your administrator."
+  },
+  "setup": {
+    "title": "Initial Setup",
+    "subtitle": "Configure your SQLAtlas instance",
+    "welcome": "Welcome to SQLAtlas",
+    "description": "Create your admin account and organization to get started.",
+    "adminSection": "Admin Account",
+    "orgSection": "Organization",
+    "complete": "Complete Setup",
+    "completing": "Setting up...",
+    "alreadySetup": "This instance has already been configured.",
+    "goToLogin": "Go to Sign In"
+  },
+  "badges": {
+    "temp": "temp",
+    "dynamic": "dynamic",
+    "params_one": "{{count}} param",
+    "params_other": "{{count}} params",
+    "issues_one": "{{count}} issue",
+    "issues_other": "{{count}} issues",
+    "objects_one": "{{count}} object",
+    "objects_other": "{{count}} objects",
+    "nodes_one": "{{count}} node",
+    "nodes_other": "{{count}} nodes",
+    "edges_one": "{{count}} edge",
+    "edges_other": "{{count}} edges",
+    "lines_one": "{{count}} line",
+    "lines_other": "{{count}} lines"
+  },
+  "dialects": {
+    "tsql": "T-SQL (SQL Server)",
+    "plpgsql": "PL/pgSQL (PostgreSQL)",
+    "plsql": "PL/SQL (Oracle)"
+  },
+  "tooltips": {
+    "cc": "Cyclomatic Complexity: measures how many execution paths the code has. Higher numbers mean harder to test and maintain.",
+    "ccShort": "Cyclomatic Complexity",
+    "riskLow": "Low risk: simple code, easy to maintain (CC ≤ 5)",
+    "riskModerate": "Moderate risk: acceptable complexity, review carefully (CC 6-10)",
+    "riskHigh": "High risk: complex code, difficult to test (CC 11-20)",
+    "riskCritical": "Critical risk: very complex code, consider refactoring (CC > 20)",
+    "confidence": "Confidence: how certain the analysis is that this dependency exists. 100% = confirmed, lower = detected by heuristics.",
+    "crud": "CRUD: Create, Read, Update, Delete — the 4 basic data operations",
+    "etl": "ETL: Extract, Transform, Load — data flow pattern",
+    "upstream": "Upstream: procedures that call this one (who calls me)",
+    "downstream": "Downstream: procedures and tables that this one calls (who do I call)",
+    "lineage": "Lineage: traces the origin and destination of data through procedures",
+    "exec": "EXEC: SQL instruction that runs another stored procedure",
+    "dynamic": "Dynamic: the procedure name is built at runtime, making static analysis harder",
+    "impact": "Impact Analysis: shows what would be affected if this object is modified",
+    "depth": "Nesting depth: how many levels of IF/WHILE/TRY blocks are nested",
+    "branches": "Branches: number of conditional forks (IF, CASE, etc.)"
+  }
+}

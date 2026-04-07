@@ -1,0 +1,60 @@
+{
+  "title": "Explorador SQL",
+  "subtitle": "Pegue SQL y analice en tiempo real",
+  "sqlInput": "Entrada SQL",
+  "placeholder": "Pegue su SQL aquí...",
+  "charCount": "{{current}} / 500,000 caracteres · {{lines}} líneas",
+  "emptyState": "Haga clic en Analizar para parsear su SQL",
+  "parseError": "Error al parsear SQL. Intente de nuevo.",
+  "anonymous": "Anónimo",
+  "complexity": "Complejidad: {{cc}} — {{level}}",
+  "tabs": {
+    "dependencies": "Dependencias",
+    "tables": "Tablas",
+    "security": "Seguridad",
+    "flow": "Flujo",
+    "autoDoc": "Auto-Doc"
+  },
+  "descriptions": {
+    "dependencies": "Procedimientos y funciones llamados vía EXEC o llamadas de función. Muestra la confianza de la llamada y si son dinámicas.",
+    "tables": "Todas las tablas referenciadas con sus operaciones (SELECT, INSERT, UPDATE, DELETE). Identifica tablas temporales.",
+    "security": "Vulnerabilidades potenciales detectadas: riesgos de inyección SQL, credenciales hardcodeadas, funciones de sistema peligrosas, escalación de privilegios.",
+    "flow": "Flujo de ejecución paso a paso mostrando condicionales, ciclos, ramas y el orden de operaciones.",
+    "docs": "Documentación generada por IA con resumen, descripción, detalles de parámetros y efectos secundarios identificados."
+  },
+  "empty": {
+    "dependencies": "No se encontraron dependencias",
+    "tables": "No se encontraron referencias a tablas",
+    "security": "No se encontraron problemas de seguridad"
+  },
+  "atLine": "en línea {{line}}",
+  "secFix": "Corrección: {{recommendation}}",
+  "secLine": "Línea {{number}}",
+  "flowNodeTypes": {
+    "condition": "condición",
+    "call": "llamada",
+    "statement": "sentencia",
+    "error_handler": "manejo de error",
+    "return": "retorno",
+    "end": "fin",
+    "loop": "ciclo",
+    "start": "inicio"
+  },
+  "autoDocLabels": {
+    "summary": "Resumen",
+    "description": "Descripción",
+    "parameters": "Parámetros",
+    "sideEffects": "Efectos Secundarios",
+    "name": "Nombre",
+    "type": "Tipo",
+    "mode": "Modo",
+    "default": "Valor por defecto"
+  },
+  "procPicker": {
+    "title": "Cargar desde conexión",
+    "selectConnection": "Seleccionar conexión...",
+    "searchPlaceholder": "Buscar procedimiento...",
+    "noResults": "No se encontraron procedimientos",
+    "lines": "líneas"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Security Scanner",
+  "subtitle": "{{count}} findings in {{procedures}} procedures",
+  "complexityDistribution": "Complexity Distribution ({{count}} procedures)",
+  "searchPlaceholder": "Search procedures or findings...",
+  "emptyState": {
+    "title": "No Security Issues Found",
+    "message": "All {{count}} procedures passed the security scan.",
+    "hint": "Try analyzing a database with dynamic SQL, hardcoded credentials, or xp_cmdshell to see findings."
+  },
+  "fix": "Fix: {{recommendation}}",
+  "line": "Line {{number}}",
+  "traceCallChain": "Trace call chain"
+}

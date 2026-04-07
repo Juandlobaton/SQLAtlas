@@ -1,0 +1,14 @@
+{
+  "title": "Panel Principal",
+  "subtitle": "Resumen de su análisis forense de bases de datos",
+  "stats": {
+    "connections": "Conexiones",
+    "procedures": "Procedimientos",
+    "dependencies": "Dependencias",
+    "tables": "Tablas",
+    "schemas": "Esquemas",
+    "securityIssues": "Problemas de Seguridad"
+  },
+  "recentAnalyses": "Análisis Recientes",
+  "securityAlerts": "Alertas de Seguridad"
+}

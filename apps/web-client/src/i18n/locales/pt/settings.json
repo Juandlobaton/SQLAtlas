@@ -1,0 +1,45 @@
+{
+  "title": "Configurações",
+  "subtitle": "Configuração e status do aplicativo",
+  "profile": {
+    "title": "Perfil",
+    "email": "E-mail",
+    "role": "Função",
+    "tenantId": "ID do Tenant",
+    "userId": "ID do Usuário",
+    "noData": "-"
+  },
+  "appearance": {
+    "title": "Aparência",
+    "theme": "Tema",
+    "themeDescription": "Alternar entre modo claro e escuro"
+  },
+  "serviceHealth": {
+    "title": "Saúde dos Serviços",
+    "apiGateway": "API Gateway",
+    "parsingEngine": "Motor de Parsing",
+    "postgresql": "PostgreSQL (metadados)",
+    "redis": "Redis (cache)",
+    "port": "Porta {{port}}",
+    "healthy": "Ativo",
+    "down": "Inativo",
+    "checking": "Verificando..."
+  },
+  "dialects": {
+    "title": "Dialetos SQL Suportados"
+  },
+  "about": {
+    "title": "Sobre o SQLAtlas",
+    "description": "Plataforma empresarial de análise forense e documentação de procedimentos armazenados SQL. Analise, mapeie e documente procedimentos armazenados em SQL Server, PostgreSQL e Oracle.",
+    "version": "Versão {{version}}",
+    "license": "Apache 2.0",
+    "architecture": "Clean Architecture"
+  },
+  "language": {
+    "title": "Idioma",
+    "description": "Selecione o idioma da interface",
+    "es": "Espanhol",
+    "pt": "Português",
+    "en": "English"
+  }
+}

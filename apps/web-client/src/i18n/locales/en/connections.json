@@ -1,0 +1,50 @@
+{
+  "title": "Database Connections",
+  "subtitle": "Manage target databases for analysis",
+  "addConnection": "Add Connection",
+  "newConnection": "New Database Connection",
+  "form": {
+    "name": "Connection Name",
+    "namePlaceholder": "My Database",
+    "host": "Host",
+    "hostPlaceholder": "localhost",
+    "port": "Port",
+    "database": "Database",
+    "databasePlaceholder": "mydb",
+    "username": "Username",
+    "usernamePlaceholder": "user",
+    "password": "Password",
+    "passwordPlaceholder": "********",
+    "passwordTestPlaceholder": "Password to test/analyze",
+    "engine": {
+      "sqlserver": "SQL Server",
+      "postgresql": "PostgreSQL",
+      "oracle": "Oracle"
+    }
+  },
+  "actions": {
+    "save": "Save Connection",
+    "saving": "Saving...",
+    "test": "Test",
+    "analyze": "Analyze",
+    "cancel": "Cancel"
+  },
+  "empty": "No connections yet. Add your first database.",
+  "testedAt": "Tested {{date}}",
+  "toast": {
+    "created": "Connection created",
+    "createdMsg": "{{name}} added successfully",
+    "createFailed": "Failed to create connection",
+    "passwordRequired": "Password required",
+    "passwordRequiredMsg": "Enter the database password to test",
+    "testSuccess": "Connection successful",
+    "testSuccessMsg": "{{latencyMs}}ms — {{functions}} functions, {{procedures}} procedures",
+    "testFailed": "Connection failed",
+    "analysisStarted": "Analysis started",
+    "analysisStartedMsg": "Job {{jobId}}... running. Check the graph page for results.",
+    "analysisFailed": "Analysis failed",
+    "deleted": "Connection deleted",
+    "deletedMsg": "{{name}} deleted",
+    "deleteFailed": "Failed to delete"
+  }
+}

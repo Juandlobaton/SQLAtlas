@@ -1,0 +1,30 @@
+{
+  "title": "Documentação e Exemplos de Execução",
+  "subtitle": "Aprenda como o SQLAtlas analisa procedimentos armazenados em diferentes motores de bancos de dados",
+  "filters": {
+    "all": "Todos",
+    "tsql": "T-SQL",
+    "plpgsql": "PL/pgSQL",
+    "plsql": "PL/SQL"
+  },
+  "tabs": {
+    "trace": "Rastro de Execução",
+    "source": "Código Fonte",
+    "dependencies": "Dependências",
+    "security": "Segurança"
+  },
+  "traceInstruction": "Rastro de execução passo a passo mostrando como os dados fluem através do procedimento:",
+  "step": "PASSO {{number}}",
+  "line": "Linha {{number}}",
+  "stepTypes": {
+    "entry": "entrada",
+    "condition": "condição",
+    "query": "consulta",
+    "call": "chamada",
+    "write": "escrita",
+    "return": "retorno",
+    "error": "erro"
+  },
+  "procedureDeps": "Dependências do Procedimento ({{count}})",
+  "tableAccess": "Acesso a Tabelas ({{count}})"
+}

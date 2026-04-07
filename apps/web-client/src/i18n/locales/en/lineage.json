@@ -1,0 +1,58 @@
+{
+  "title": "Data Lineage",
+  "subtitle": "{{objects}} objects, {{deps}} dependencies",
+  "tabs": {
+    "explorer": "Schema Explorer",
+    "lineage": "Data Lineage",
+    "matrix": "CRUD Matrix",
+    "impact": "Impact Analysis"
+  },
+  "search": "Search procedures, functions, tables...",
+  "allSchemas": "All schemas",
+  "schemas": "SCHEMAS",
+  "selectProcedure": "Select a procedure from the schema tree",
+  "detail": {
+    "lines_one": "{{count}} line",
+    "lines_other": "{{count}} lines",
+    "parameters": "Parameters",
+    "paramName": "Name",
+    "paramType": "Type",
+    "paramMode": "Mode",
+    "documentation": "Documentation",
+    "sideEffects": "Side Effects",
+    "securityFindings": "Security Findings",
+    "fix": "Fix: {{recommendation}}",
+    "sourceCode": "Source Code",
+    "openInExplorer": "Open in SQL Explorer",
+    "openInFlow": "View in Flow Analysis"
+  },
+  "lineageView": {
+    "selectToViewLineage": "Select a procedure to view lineage",
+    "selectToSeeLineage": "Select a procedure to see its data lineage",
+    "upstream": "Callers (upstream)",
+    "noCallers": "No callers found",
+    "selected": "Selected",
+    "executionFlow": "Execution Flow",
+    "downstream": "Called (downstream)",
+    "noDeps": "No dependencies found"
+  },
+  "matrix": {
+    "procedureFunction": "Procedure / Function",
+    "dependencies": "Dependencies",
+    "empty": "No dependencies found. Run an analysis first."
+  },
+  "descriptions": {
+    "explorer": "Browse database schemas, view procedure parameters, auto-generated documentation, security findings, and source code.",
+    "lineage": "Trace upstream callers and downstream dependencies for any procedure. Visualize the complete call chain.",
+    "matrix": "View which procedures read, write, or call which objects. Identify CRUD patterns across your codebase.",
+    "impact": "Select any object to discover all procedures that depend on it. Essential for change impact assessment."
+  },
+  "impact": {
+    "selectObject": "Select an object to see what depends on it",
+    "selectToSeeImpact": "Select an object to see its impact",
+    "deps_one": "{{count}} dependency",
+    "deps_other": "{{count}} dependencies",
+    "description": "The following procedures/functions depend on this object:",
+    "confidence": "confidence {{pct}}%"
+  }
+}
