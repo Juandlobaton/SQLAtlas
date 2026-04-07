@@ -36,7 +36,7 @@ CORS_ORIGINS=https://your-domain.com
 
 # Optional — auto-create admin on first boot
 ADMIN_EMAIL=admin@your-domain.com
-ADMIN_PASSWORD=YourSecureP@ss123!
+ADMIN_PASSWORD=ChangeMe!Str0ng#
 ADMIN_DISPLAY_NAME=Admin
 ORG_NAME=Your Company
 ```

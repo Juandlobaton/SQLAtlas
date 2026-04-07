@@ -18,6 +18,9 @@ build/
 !.env.example
 docker/.env
 
+# Claude Code (local config — may contain allowed commands with credentials)
+.claude/
+
 # IDE
 .vscode/settings.json
 .idea/

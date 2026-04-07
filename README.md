@@ -121,7 +121,7 @@ CREDENTIAL_ENCRYPTION_KEY=run-node-e-console.log-require-crypto-randomBytes-32-t
 
 # Auto-creates admin on first boot
 ADMIN_EMAIL=admin@yourcompany.com
-ADMIN_PASSWORD=SecureP@ss123!
+ADMIN_PASSWORD=ChangeMe!Str0ng#
 ADMIN_DISPLAY_NAME=Admin
 ORG_NAME=Your Company
 ```
