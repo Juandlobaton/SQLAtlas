@@ -15,7 +15,8 @@
     "esModuleInterop": true,
     "baseUrl": "./src",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "#router": ["./app/router.tsx"]
     }
   },
   "include": ["src"],

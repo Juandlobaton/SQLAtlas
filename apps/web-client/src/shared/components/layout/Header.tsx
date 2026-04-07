@@ -77,10 +77,12 @@ export function Header() {
             {initials}
           </div>
 
-          <button onClick={() => { logout(); navigate('/login'); }} title={t('auth.logout')}
-            className="p-1.5 rounded-md text-surface-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150 cursor-pointer">
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
+          {import.meta.env.VITE_DEMO_MODE !== 'true' && (
+            <button onClick={() => { logout(); navigate('/login'); }} title={t('auth.logout')}
+              className="p-1.5 rounded-md text-surface-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150 cursor-pointer">
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </header>
 

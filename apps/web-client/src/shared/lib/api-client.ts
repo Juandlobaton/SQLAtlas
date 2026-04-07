@@ -1,5 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 const PARSER_BASE = import.meta.env.VITE_PARSER_BASE || '/parse';
+const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true';
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
@@ -8,6 +9,17 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
 
 async function request<T>(base: string, path: string, options: RequestOptions = {}): Promise<T> {
   const { body, headers: extraHeaders, signal, ...rest } = options;
+
+  // Demo mode: intercept ALL API calls with mock data
+  if (IS_DEMO) {
+    const { demoFetch } = await import('@/demo/demo-api');
+    const fullPath = base === PARSER_BASE ? `/parser${path}` : path;
+    const response = await demoFetch(fullPath, {
+      ...rest,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return response.json();
+  }
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -23,8 +35,7 @@ async function request<T>(base: string, path: string, options: RequestOptions = 
   });
 
   // Auto-logout on expired/invalid token
-  if (response.status === 401) {
-    // Try to clear cookies via logout endpoint
+  if (response.status === 401 && !IS_DEMO) {
     fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
     window.location.href = '/login';
     throw new Error('Session expired');

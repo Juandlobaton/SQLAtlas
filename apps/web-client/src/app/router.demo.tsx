@@ -1,6 +1,5 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from '@/shared/components/layout/AppShell';
-import { AuthGuard } from '@/shared/components/AuthGuard';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { PlaygroundPage } from '@/pages/PlaygroundPage';
 import { LineagePage } from '@/pages/LineagePage';
@@ -11,15 +10,13 @@ import { FlowPage } from '@/pages/FlowPage';
 import { TablesPage } from '@/pages/TablesPage';
 import { ERDiagramPage } from '@/pages/ERDiagramPage';
 import { SettingsPage } from '@/pages/SettingsPage';
-import { LoginPage } from '@/pages/LoginPage';
-import { SetupPage } from '@/pages/SetupPage';
 
 export const router = createBrowserRouter([
-  { path: '/setup', element: <SetupPage /> },
-  { path: '/login', element: <LoginPage /> },
+  { path: '/login', element: <Navigate to="/" replace /> },
+  { path: '/setup', element: <Navigate to="/" replace /> },
   {
     path: '/',
-    element: <AuthGuard><AppShell /></AuthGuard>,
+    element: <AppShell />,
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'explorer', element: <PlaygroundPage /> },

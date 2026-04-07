@@ -48,9 +48,12 @@ function handleAuthResponse(data: { accessToken: string }, set: any) {
   set({ user, isAuthenticated: !!user, isLoading: false, error: null });
 }
 
+const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true';
+const DEMO_USER: AuthUser = { sub: 'demo-user', email: 'demo@sqlatlas.dev', tenantId: 'demo-tenant', role: 'viewer' };
+
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  isAuthenticated: false,
+  user: IS_DEMO ? DEMO_USER : null,
+  isAuthenticated: IS_DEMO,
   isLoading: false,
   error: null,
   systemStatus: null,
@@ -117,6 +120,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   restoreSession: () => {
+    // Demo mode: auto-authenticate
+    if (import.meta.env.VITE_DEMO_MODE === 'true') {
+      set({ user: { sub: 'demo-user', email: 'demo@sqlatlas.dev', tenantId: 'demo-tenant', role: 'viewer' }, isAuthenticated: true });
+      return;
+    }
     // Restore UI state from session_user (actual auth is via HttpOnly cookie)
     const stored = localStorage.getItem('session_user');
     if (stored) {

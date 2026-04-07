@@ -6,24 +6,23 @@ import { cn } from '@/shared/lib/utils';
 
 const stats = [
   { labelKey: 'dashboard:stats.connections', value: '3', icon: Database, color: 'text-brand-500' },
-  { labelKey: 'dashboard:stats.procedures', value: '1,504', icon: Workflow, color: 'text-purple-500' },
-  { labelKey: 'dashboard:stats.dependencies', value: '847', icon: GitBranch, color: 'text-emerald-500' },
-  { labelKey: 'dashboard:stats.tables', value: '156', icon: Table2, color: 'text-cyan-500' },
-  { labelKey: 'dashboard:stats.schemas', value: '21', icon: Layers, color: 'text-amber-500' },
-  { labelKey: 'dashboard:stats.securityIssues', value: '12', icon: Shield, color: 'text-red-500' },
+  { labelKey: 'dashboard:stats.procedures', value: '127', icon: Workflow, color: 'text-purple-500' },
+  { labelKey: 'dashboard:stats.dependencies', value: '117', icon: GitBranch, color: 'text-emerald-500' },
+  { labelKey: 'dashboard:stats.tables', value: '185', icon: Table2, color: 'text-cyan-500' },
+  { labelKey: 'dashboard:stats.schemas', value: '18', icon: Layers, color: 'text-amber-500' },
+  { labelKey: 'dashboard:stats.securityIssues', value: '3', icon: Shield, color: 'text-red-500' },
 ];
 
 const recentAnalyses = [
-  { db: 'cyclora', engine: 'PostgreSQL', status: 'completed', objects: 1504, time: '2m ago' },
-  { db: 'billing_db', engine: 'SQL Server', status: 'running', objects: 342, time: 'now' },
-  { db: 'legacy_oracle', engine: 'Oracle', status: 'pending', objects: 0, time: 'queued' },
+  { db: 'Banking Demo', engine: 'PostgreSQL', status: 'completed', objects: 53, time: '5m ago' },
+  { db: 'SQL Server Test', engine: 'SQL Server', status: 'completed', objects: 21, time: '12m ago' },
+  { db: 'Oracle PL/SQL Test', engine: 'Oracle', status: 'completed', objects: 53, time: '18m ago' },
 ];
 
 const securityAlerts = [
-  { severity: 'critical', message: 'Hardcoded credentials in sp_SyncData', procedure: 'dbo.sp_SyncData' },
-  { severity: 'high', message: 'xp_cmdshell usage detected', procedure: 'admin.sp_Maintenance' },
-  { severity: 'high', message: 'SECURITY DEFINER without restriction', procedure: 'public.exec_query' },
-  { severity: 'medium', message: 'Dynamic SQL without parameterization', procedure: 'dbo.sp_Search' },
+  { severity: 'high', message: 'Dynamic SQL without parameterization', procedure: 'banking.process_card_transaction' },
+  { severity: 'medium', message: 'Missing input validation', procedure: 'fraud.check_transaction' },
+  { severity: 'low', message: 'Unused parameter detected', procedure: 'reports.generate_daily_report' },
 ];
 
 export function DashboardPage() {

@@ -17,6 +17,10 @@ export function LoginPage() {
   const [tenantName, setTenantName] = useState('');
 
   useEffect(() => {
+    if (import.meta.env.VITE_DEMO_MODE === 'true') {
+      navigate('/', { replace: true });
+      return;
+    }
     fetchSystemStatus()
       .then((status) => {
         if (status.needsSetup) navigate('/setup', { replace: true });
