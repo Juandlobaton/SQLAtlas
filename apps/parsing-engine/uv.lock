@@ -748,7 +748,7 @@ wheels = [
 ]
 
 [[package]]
-name = "sqlforensics-parsing-engine"
+name = "sqlatlas-parsing-engine"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
