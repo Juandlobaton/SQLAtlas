@@ -83,6 +83,11 @@ import { LoginUseCase } from './application/use-cases/auth/login.use-case';
 import { RegisterUseCase } from './application/use-cases/auth/register.use-case';
 import { SetupUseCase } from './application/use-cases/auth/setup.use-case';
 import { GetSystemStatusUseCase } from './application/use-cases/auth/get-system-status.use-case';
+import { MicrosoftLoginUseCase } from './application/use-cases/auth/microsoft-login.use-case';
+import { MsalService, MSAL_SERVICE } from './infrastructure/security/msal.service';
+import { MockOAuthModule } from './infrastructure/security/mock-oauth/mock-oauth.module';
+import { MockMsalService } from './infrastructure/security/mock-oauth/mock-msal.service';
+import { UserRole } from './domain/entities/user.entity';
 import { CreateConnectionUseCase } from './application/use-cases/connections/create-connection.use-case';
 import { TestConnectionUseCase } from './application/use-cases/connections/test-connection.use-case';
 import { ListConnectionsUseCase } from './application/use-cases/connections/list-connections.use-case';
@@ -92,6 +97,8 @@ import { GetDependencyGraphUseCase } from './application/use-cases/analysis/get-
 import { RotateCredentialsUseCase } from './application/use-cases/admin/rotate-credentials.use-case';
 import { GetDashboardStatsUseCase } from './application/use-cases/dashboard/get-dashboard-stats.use-case';
 import { JwtPayload, AuthTokensOutput } from './application/dto/auth.dto';
+
+const IS_MOCK_OAUTH = process.env.MOCK_OAUTH === 'true';
 
 const ORM_ENTITIES = [
   TenantOrmEntity, UserOrmEntity, DbConnectionOrmEntity,
@@ -123,6 +130,7 @@ const ORM_ENTITIES = [
       limit: 100,
     }]),
     RedisCacheModule,
+    ...(IS_MOCK_OAUTH ? [MockOAuthModule] : []),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -242,9 +250,39 @@ const ORM_ENTITIES = [
       useFactory: (tenantRepo: ITenantRepository, config: ConfigService) => {
         const registrationMode = config.get<'closed' | 'invite-only' | 'open'>('REGISTRATION_MODE', 'closed');
         const multiTenant = config.get('MULTI_TENANT', 'false') === 'true';
-        return new GetSystemStatusUseCase(tenantRepo, registrationMode, multiTenant);
+        const microsoftSso = IS_MOCK_OAUTH || !!config.get('AZURE_AD_CLIENT_ID');
+        return new GetSystemStatusUseCase(tenantRepo, registrationMode, multiTenant, microsoftSso);
       },
       inject: [TENANT_REPOSITORY, ConfigService],
+    },
+
+    // ── Microsoft SSO (conditional — real MSAL or mock) ──
+    {
+      provide: MSAL_SERVICE,
+      useFactory: (config: ConfigService, ...extra: any[]) => {
+        if (IS_MOCK_OAUTH) return extra[0]; // MockMsalService from MockOAuthModule
+        if (!config.get('AZURE_AD_CLIENT_ID')) return null;
+        return new MsalService(config);
+      },
+      inject: IS_MOCK_OAUTH
+        ? [ConfigService, MockMsalService]
+        : [ConfigService],
+    },
+    {
+      provide: MicrosoftLoginUseCase,
+      useFactory: (userRepo: IUserRepository, tenantRepo: ITenantRepository, auditRepo: IAuditLogRepository, jwtService: JwtService, config: ConfigService) => {
+        if (!IS_MOCK_OAUTH && !config.get('AZURE_AD_CLIENT_ID')) return undefined;
+        const generateTokens = (payload: JwtPayload): AuthTokensOutput => ({
+          accessToken: jwtService.sign({ ...payload, type: 'access' }),
+          refreshToken: jwtService.sign({ ...payload, type: 'refresh' }, { expiresIn: '7d' }),
+          expiresIn: 900,
+        });
+        const multiTenant = config.get('MULTI_TENANT', 'false') === 'true';
+        const autoProvision = config.get('AZURE_AD_AUTO_PROVISION', 'true') === 'true';
+        const defaultRole = config.get<UserRole>('AZURE_AD_DEFAULT_ROLE', UserRole.ANALYST);
+        return new MicrosoftLoginUseCase(userRepo, tenantRepo, auditRepo, generateTokens, multiTenant, autoProvision, defaultRole);
+      },
+      inject: [USER_REPOSITORY, TENANT_REPOSITORY, AUDIT_LOG_REPOSITORY, JwtService, ConfigService],
     },
     {
       provide: CreateConnectionUseCase,

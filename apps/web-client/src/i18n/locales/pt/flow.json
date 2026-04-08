@@ -48,5 +48,15 @@
     },
     "occurrences": "{{count}} usos"
   },
-  "stats": "{{type}} / {{lineCount}} linhas / {{calls}} chamadas / {{tables}} refs. de tabelas"
+  "stats": "{{type}} / {{lineCount}} linhas / {{calls}} chamadas / {{tables}} refs. de tabelas",
+  "tabs": {
+    "pipeline": "Pipeline",
+    "controlFlow": "Fluxo de Controle"
+  },
+  "flowTree": {
+    "expandAll": "Expandir tudo",
+    "collapseAll": "Recolher tudo",
+    "showMore": "Mostrar {{count}} mais de {{remaining}} restantes...",
+    "noFlow": "Nenhum dado de fluxo de controle disponível"
+  }
 }

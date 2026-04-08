@@ -21,6 +21,7 @@ import { JwtPayload } from '../../../application/dto/auth.dto';
 import { UserRole } from '../../../domain/entities/user.entity';
 import { StartAnalysisUseCase } from '../../../application/use-cases/analysis/start-analysis.use-case';
 import { GetDependencyGraphUseCase } from '../../../application/use-cases/analysis/get-dependency-graph.use-case';
+import { GetDashboardStatsUseCase } from '../../../application/use-cases/dashboard/get-dashboard-stats.use-case';
 import { Inject } from '@nestjs/common';
 import { PROCEDURE_REPOSITORY, IProcedureRepository } from '../../../domain/repositories/procedure.repository';
 import { ANALYSIS_JOB_REPOSITORY, IAnalysisJobRepository } from '../../../domain/repositories/analysis-job.repository';
@@ -48,11 +49,20 @@ export class AnalysisController {
   constructor(
     private readonly startAnalysisUseCase: StartAnalysisUseCase,
     private readonly getDependencyGraphUseCase: GetDependencyGraphUseCase,
+    private readonly getDashboardStatsUseCase: GetDashboardStatsUseCase,
     @Inject(PROCEDURE_REPOSITORY) private readonly procedureRepo: IProcedureRepository,
     @Inject(ANALYSIS_JOB_REPOSITORY) private readonly jobRepo: IAnalysisJobRepository,
     @Inject(DISCOVERED_TABLE_REPOSITORY) private readonly tableRepo: IDiscoveredTableRepository,
     @Inject(CACHE_SERVICE) private readonly cache: ICacheService,
   ) {}
+
+  @Get('dashboard')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get dashboard stats for current tenant' })
+  async getDashboard(@CurrentUser() user: JwtPayload) {
+    const data = await this.getDashboardStatsUseCase.execute(user.tenantId);
+    return { success: true, data };
+  }
 
   @Post('start')
   @Roles(UserRole.ADMIN, UserRole.OWNER, UserRole.ANALYST)

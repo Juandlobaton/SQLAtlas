@@ -3,12 +3,15 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Play, Shield, GitBranch, Table2, Workflow, AlertTriangle, ChevronDown, Copy, Check,
-  Database, Search, Loader2,
+  Database, Search, Loader2, Code,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { parserApi, type ParseResponse } from '@/shared/lib/api-client';
-import { useConnections } from '@/shared/hooks/useConnections';
+import { useGlobalConnection } from '@/shared/hooks/useGlobalConnection';
+import { useStudioContext } from '@/shared/hooks/useStudioContext';
 import { useProcedures, type ProcedureItem } from '@/shared/hooks/useAnalysis';
+import { FlowTreeView } from '@/features/visualization/components/FlowTreeView';
+import type { FlowTreeNode } from '@/features/visualization/types/flow-tree';
 
 const SAMPLE_SQL = `CREATE PROCEDURE dbo.sp_ProcessOrder
   @OrderId INT,
@@ -65,16 +68,15 @@ type Tab = 'dependencies' | 'security' | 'flow' | 'tables' | 'docs';
 export function PlaygroundPage() {
   const { t } = useTranslation(['playground', 'common']);
   const { connectionId: urlConnectionId, procedureId: urlProcedureId } = useParams();
-  const [sql, setSql] = useState(SAMPLE_SQL);
-  const [dialect, setDialect] = useState('tsql');
+  const [sql, setSql] = useStudioContext('sql-explorer', 'sql', SAMPLE_SQL);
+  const [dialect, setDialect] = useStudioContext('sql-explorer', 'dialect', 'tsql');
   const [result, setResult] = useState<ParseResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>('dependencies');
+  const [activeTab, setActiveTab] = useStudioContext<Tab>('sql-explorer', 'activeTab', 'dependencies');
   const [copied, setCopied] = useState(false);
 
   // Procedure picker state
-  const { data: connections = [] } = useConnections();
-  const [connectionId, setConnectionId] = useState<string | null>(urlConnectionId || null);
+  const { connectionId, setConnectionId, connections } = useGlobalConnection();
   const [procSearch, setProcSearch] = useState('');
   const [showProcPicker, setShowProcPicker] = useState(!urlConnectionId);
 
@@ -176,34 +178,35 @@ export function PlaygroundPage() {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in h-full flex flex-col">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t('playground:title')}</h1>
-          <p className="text-surface-500 text-sm mt-1">{t('playground:subtitle')}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <select
-              value={dialect}
-              onChange={(e) => setDialect(e.target.value)}
-              className="input pr-8 w-40 appearance-none"
-            >
-              <option value="tsql">{t('common:dialects.tsql')}</option>
-              <option value="postgres">{t('common:dialects.plpgsql')}</option>
-              <option value="oracle">{t('common:dialects.plsql')}</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-surface-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+    <div className="h-full flex flex-col">
+      {/* Compact toolbar */}
+      <div className="h-10 flex-none flex items-center justify-between px-3 border-b border-surface-200 bg-surface-50/80">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2">
+            <Code className="w-4 h-4 text-brand-500 flex-shrink-0" />
+            <span className="text-sm font-semibold truncate">{t('playground:title')}</span>
           </div>
-          <button onClick={handleParse} disabled={loading || !sql.trim()} className="btn-primary">
-            <Play className="w-4 h-4" />
+          <span className="text-[10px] text-surface-400 hidden sm:inline">{t('playground:subtitle')}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={dialect}
+            onChange={(e) => setDialect(e.target.value)}
+            className="input w-40 text-xs h-7"
+          >
+            <option value="tsql">{t('common:dialects.tsql')}</option>
+            <option value="postgres">{t('common:dialects.plpgsql')}</option>
+            <option value="oracle">{t('common:dialects.plsql')}</option>
+          </select>
+          <button onClick={handleParse} disabled={loading || !sql.trim()} className="btn-primary text-xs h-7 px-3">
+            <Play className="w-3.5 h-3.5" />
             {loading ? t('common:analyzing') : t('common:analyze')}
           </button>
         </div>
       </div>
 
       {/* Procedure picker */}
-      <div className="mb-4 rounded-xl border border-surface-200 bg-surface-50 dark:bg-surface-100/30">
+      <div className="border-b border-surface-200 bg-surface-50 dark:bg-surface-100/30">
         <button
           onClick={() => setShowProcPicker(!showProcPicker)}
           className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-surface-600 hover:bg-surface-100 transition-colors"
@@ -283,7 +286,7 @@ export function PlaygroundPage() {
         )}
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-0">
         {/* Editor */}
         <div className="card flex flex-col min-h-[400px]">
           <div className="px-4 py-2 border-b border-surface-200 flex items-center justify-between">
@@ -471,49 +474,143 @@ export function PlaygroundPage() {
                 )}
 
                 {activeTab === 'flow' && flowTree && (
-                  <div className="space-y-1">
-                    {((flowTree.children as Record<string, unknown>[]) || []).map((node, i) => (
-                      <div
-                        key={`flow-${(node.lineNumber as number) || i}-${(node.nodeType as string) || ''}`}
-                        className={cn(
-                          'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-mono',
-                          (node.nodeType as string) === 'condition' && 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400',
-                          (node.nodeType as string) === 'loop' && 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400',
-                          (node.nodeType as string) === 'call' && 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400',
-                          (node.nodeType as string) === 'statement' && 'bg-surface-100',
-                          (node.nodeType as string) === 'return' && 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400',
-                          (node.nodeType as string) === 'error_handler' && 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
-                          (node.nodeType as string) === 'end' && 'bg-surface-200 text-surface-500',
-                        )}
-                      >
-                        <span className="text-xs text-surface-400 w-8">L{node.lineNumber as number}</span>
-                        <span className={cn(
-                          'badge text-[10px]',
-                          (node.nodeType as string) === 'condition' && 'bg-amber-200 text-amber-800',
-                          (node.nodeType as string) === 'call' && 'bg-blue-200 text-blue-800',
-                          (node.nodeType as string) === 'statement' && 'bg-gray-200 text-gray-800',
-                          (node.nodeType as string) === 'error_handler' && 'bg-red-200 text-red-800',
-                          (node.nodeType as string) === 'return' && 'bg-emerald-200 text-emerald-800',
-                          (node.nodeType as string) === 'end' && 'bg-gray-200 text-gray-600',
-                        )}>
-                          {t(`playground:flowNodeTypes.${node.nodeType}`, { defaultValue: node.nodeType as string })}
-                        </span>
-                        <span className="truncate text-xs">{node.label as string}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <FlowTreeView
+                    tree={flowTree as unknown as FlowTreeNode}
+                    defaultExpandDepth={3}
+                  />
                 )}
 
                 {activeTab === 'docs' && autoDoc && (
                   <div className="space-y-4">
+                    {/* Header metadata from SQL comments */}
+                    {(autoDoc.header as Record<string, unknown>) && (
+                      <div className="rounded-lg border border-brand-500/20 bg-brand-500/5 p-3 space-y-1.5">
+                        {(autoDoc.header as any).author && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-semibold text-surface-500 w-20">Autor:</span>
+                            <span className="text-surface-700">{(autoDoc.header as any).author}</span>
+                          </div>
+                        )}
+                        {(autoDoc.header as any).createDate && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-semibold text-surface-500 w-20">Creado:</span>
+                            <span className="text-surface-700">{(autoDoc.header as any).createDate}</span>
+                          </div>
+                        )}
+                        {(autoDoc.header as any).updateAuthor && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-semibold text-surface-500 w-20">Modificado:</span>
+                            <span className="text-surface-700">
+                              {(autoDoc.header as any).updateAuthor}
+                              {(autoDoc.header as any).updateDate ? ` (${(autoDoc.header as any).updateDate})` : ''}
+                            </span>
+                          </div>
+                        )}
+                        {(autoDoc.header as any).ticket && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-semibold text-surface-500 w-20">Ticket:</span>
+                            <span className="badge-info text-2xs">{(autoDoc.header as any).ticket}</span>
+                          </div>
+                        )}
+                        {(autoDoc.header as any).description && (
+                          <div className="flex items-start gap-2 text-xs pt-1 border-t border-surface-200/50 mt-1">
+                            <span className="font-semibold text-surface-500 w-20 flex-shrink-0">Descripcion:</span>
+                            <span className="text-surface-700">{
+                              Array.isArray((autoDoc.header as any).description)
+                                ? ((autoDoc.header as any).description as string[]).join(' | ')
+                                : (autoDoc.header as any).description
+                            }</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Comment language badge */}
+                    {(autoDoc.commentLanguage as string) && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xs text-surface-400">{t('playground:commentLang.label', { defaultValue: 'Comments' })}:</span>
+                        <span className="text-2xs px-1.5 py-0.5 rounded bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 font-medium">
+                          {t(`playground:commentLang.${autoDoc.commentLanguage}`, { defaultValue: autoDoc.commentLanguage as string })}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Summary */}
                     <div>
                       <h4 className="text-xs font-semibold text-surface-500 uppercase mb-1">{t('playground:autoDocLabels.summary')}</h4>
                       <p className="text-sm">{autoDoc.summary as string}</p>
                     </div>
+
+                    {/* Process overview */}
+                    {(autoDoc.processOverview as Record<string, unknown>) && (
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-semibold text-surface-500 uppercase">Vision General del Proceso</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {((autoDoc.processOverview as any).dataFlow?.reads as string[])?.length > 0 && (
+                            <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-2">
+                              <p className="text-2xs font-semibold text-emerald-500 uppercase mb-1">Tablas Leidas</p>
+                              <div className="space-y-0.5">
+                                {((autoDoc.processOverview as any).dataFlow.reads as string[]).map((t: string) => (
+                                  <p key={t} className="text-2xs font-mono text-surface-600">{t}</p>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {((autoDoc.processOverview as any).dataFlow?.writes as string[])?.length > 0 && (
+                            <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-2">
+                              <p className="text-2xs font-semibold text-amber-500 uppercase mb-1">Tablas Escritas</p>
+                              <div className="space-y-0.5">
+                                {((autoDoc.processOverview as any).dataFlow.writes as string[]).map((t: string) => (
+                                  <p key={t} className="text-2xs font-mono text-surface-600">{t}</p>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        {((autoDoc.processOverview as any).structure) && (
+                          <div className="flex gap-2 flex-wrap">
+                            {(autoDoc.processOverview as any).structure.conditions > 0 && (
+                              <span className="badge text-2xs bg-amber-500/15 text-amber-500">
+                                {(autoDoc.processOverview as any).structure.conditions} condiciones
+                              </span>
+                            )}
+                            {(autoDoc.processOverview as any).structure.loops > 0 && (
+                              <span className="badge text-2xs bg-purple-500/15 text-purple-500">
+                                {(autoDoc.processOverview as any).structure.loops} bucles
+                              </span>
+                            )}
+                            {(autoDoc.processOverview as any).structure.tryCatches > 0 && (
+                              <span className="badge text-2xs bg-blue-500/15 text-blue-500">
+                                {(autoDoc.processOverview as any).structure.tryCatches} try/catch
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Description */}
                     <div>
                       <h4 className="text-xs font-semibold text-surface-500 uppercase mb-1">{t('playground:autoDocLabels.description')}</h4>
                       <p className="text-sm text-surface-600">{autoDoc.description as string}</p>
                     </div>
+
+                    {/* Business process documentation */}
+                    {(autoDoc.steps as any[])?.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold text-surface-500 uppercase mb-2">{t('playground:stepLabels.processTitle', { defaultValue: 'Execution Process' })}</h4>
+                        <p className="text-2xs text-surface-400 mb-3">
+                          {t('playground:stepLabels.processHint', { defaultValue: 'Step-by-step process documentation.' })}
+                        </p>
+                        <div className="space-y-0.5">
+                          {(autoDoc.steps as any[]).map((step: any, i: number) => (
+                            <StepDocItem key={`step-${step.step || i}`} step={step} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Parameters */}
                     {params.length > 0 && (
                       <div>
                         <h4 className="text-xs font-semibold text-surface-500 uppercase mb-2">{t('playground:autoDocLabels.parameters')}</h4>
@@ -541,6 +638,8 @@ export function PlaygroundPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Side effects */}
                     {(autoDoc.sideEffects as string[])?.length > 0 && (
                       <div>
                         <h4 className="text-xs font-semibold text-surface-500 uppercase mb-1">{t('playground:autoDocLabels.sideEffects')}</h4>
@@ -554,6 +653,22 @@ export function PlaygroundPage() {
                         </ul>
                       </div>
                     )}
+
+                    {/* Change history */}
+                    {(autoDoc.header as any)?.changeHistory?.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold text-surface-500 uppercase mb-2">Historial de Cambios</h4>
+                        <div className="space-y-1.5">
+                          {((autoDoc.header as any).changeHistory as any[]).map((ch: any, i: number) => (
+                            <div key={`ch-${i}`} className="flex items-start gap-2 text-xs p-2 rounded bg-surface-100/60">
+                              <span className="text-surface-400 flex-shrink-0">{ch.date}</span>
+                              <span className="text-surface-500 flex-shrink-0">{ch.author}</span>
+                              <span className="text-surface-700">{ch.description}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -561,6 +676,199 @@ export function PlaygroundPage() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Business Process Step (recursive) ── */
+const TYPE_STYLES: Record<string, { color: string; bg: string }> = {
+  setup:       { color: 'text-slate-500',   bg: 'bg-slate-500/5' },
+  query:       { color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
+  modify:      { color: 'text-amber-500',   bg: 'bg-amber-500/5' },
+  call:        { color: 'text-blue-500',    bg: 'bg-blue-500/5' },
+  decision:    { color: 'text-amber-600',   bg: 'bg-amber-500/5' },
+  loop:        { color: 'text-purple-500',  bg: 'bg-purple-500/5' },
+  protection:  { color: 'text-blue-500',    bg: 'bg-blue-500/5' },
+  error:       { color: 'text-red-500',     bg: 'bg-red-500/5' },
+  result:      { color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
+  transaction: { color: 'text-indigo-500',  bg: 'bg-indigo-500/5' },
+  operation:   { color: 'text-surface-500', bg: 'bg-surface-100/40' },
+};
+
+function StepDocItem({ step, depth = 0 }: { step: any; depth?: number }) {
+  const { t } = useTranslation(['playground']);
+  const [expanded, setExpanded] = useState(false);
+  const type = (step.type as string) || 'operation';
+  const style = TYPE_STYLES[type] || TYPE_STYLES.operation;
+  const typeLabel = t(`playground:stepTypes.${type}`, { defaultValue: type });
+
+  // SQL diff view helpers
+  const sqlLines: string[] = step.sql ? step.sql.split('\n') : [];
+  const startLine = step.line || 1;
+  const COLLAPSED_MAX = 4;
+  const needsCollapse = sqlLines.length > COLLAPSED_MAX;
+  const visibleLines = (!needsCollapse || expanded) ? sqlLines : sqlLines.slice(0, COLLAPSED_MAX);
+
+  // Line range label
+  const lineLabel = step.line
+    ? step.lineEnd && step.lineEnd !== step.line
+      ? t('playground:stepLabels.lines', { start: step.line, end: step.lineEnd, defaultValue: `L${step.line}–L${step.lineEnd}` })
+      : t('playground:stepLabels.linesSingle', { line: step.line, defaultValue: `L${step.line}` })
+    : null;
+
+  return (
+    <div className={cn(depth > 0 && 'ml-4 border-l-2 border-surface-200/40 pl-3 mt-1')}>
+      <div className={cn('rounded-lg p-2.5 mb-1', style.bg)}>
+        {/* Step header */}
+        <div className="flex items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={cn('text-2xs font-bold uppercase px-1.5 py-0.5 rounded', style.color, style.bg)}>{typeLabel}</span>
+              {step.step && (
+                <span className="text-2xs text-surface-400">#{step.step}</span>
+              )}
+              {lineLabel && (
+                <span className="text-2xs text-surface-400 font-mono">{lineLabel}</span>
+              )}
+            </div>
+            <p className="text-xs font-medium text-surface-800 dark:text-surface-200 mt-0.5">
+              {step.title}
+            </p>
+            {step.detail && (
+              <p className="text-2xs text-surface-500 mt-0.5">{step.detail}</p>
+            )}
+            {step.businessContext && step.businessContext !== step.title && (
+              <p className="text-2xs text-brand-500 italic mt-0.5">
+                {step.businessContext}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Data impact pills */}
+        {(step.dataImpact || step.calls || step.outputs) && (
+          <div className="flex flex-wrap gap-1 mt-1.5 ml-6">
+            {step.dataImpact?.tables?.map((tbl: string) => (
+              <span key={tbl} className="text-2xs px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-600 font-mono">
+                {step.dataImpact.operation} {tbl}
+              </span>
+            ))}
+            {step.calls && (
+              <span className="text-2xs px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 font-mono">
+                → {step.calls}
+              </span>
+            )}
+            {step.outputs?.map((v: string) => (
+              <span key={v} className="text-2xs px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-600 font-mono">
+                {v} =
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* SQL diff view — inline with line-number gutter */}
+        {sqlLines.length > 0 && (
+          <div className="mt-2 rounded overflow-hidden border border-surface-200/30 dark:border-surface-700/40">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-surface-100/80 dark:bg-surface-800/60 border-b border-surface-200/30 dark:border-surface-700/40">
+              <Code size={10} className="text-surface-400" />
+              <span className="text-[10px] text-surface-400 font-mono">
+                {lineLabel || 'SQL'}
+              </span>
+            </div>
+            <div className="bg-surface-900 dark:bg-surface-950 overflow-x-auto">
+              <table className="w-full border-collapse">
+                <tbody>
+                  {visibleLines.map((line: string, i: number) => (
+                    <tr key={i} className="hover:bg-surface-800/40">
+                      <td className="text-[10px] font-mono text-surface-500 text-right px-2 py-px select-none w-8 border-r border-surface-700/40 bg-surface-900/60 dark:bg-surface-950/60">
+                        {startLine + i}
+                      </td>
+                      <td className="text-[10px] font-mono text-surface-200 px-2.5 py-px whitespace-pre">
+                        {line}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {needsCollapse && (
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="w-full flex items-center justify-center gap-1 py-0.5 bg-surface-100/80 dark:bg-surface-800/60 border-t border-surface-200/30 dark:border-surface-700/40 text-[10px] text-surface-400 hover:text-surface-600 transition-colors"
+              >
+                {expanded
+                  ? <>{t('playground:stepLabels.showLess', { defaultValue: 'Show less' })} <ChevronDown size={10} className="rotate-180" /></>
+                  : <>{t('playground:stepLabels.showMore', { defaultValue: 'Show more' })} ({sqlLines.length - COLLAPSED_MAX}) <ChevronDown size={10} /></>
+                }
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Condition: SI / SINO */}
+      {step.condition && (
+        <div className="ml-6 text-2xs text-surface-500 mb-1">
+          {t('playground:stepLabels.condition', { defaultValue: 'Condition' })}: <code className="text-amber-500">{step.condition}</code>
+        </div>
+      )}
+
+      {step.whenTrue?.length > 0 && (
+        <div className="ml-2 mt-0.5">
+          <div className="flex items-center gap-1.5 mb-0.5 ml-4">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-2xs font-semibold text-emerald-600">{t('playground:stepLabels.whenTrue', { defaultValue: 'When TRUE' })}:</span>
+          </div>
+          {step.whenTrue.map((s: any, i: number) => (
+            <StepDocItem key={`t-${s.step || i}`} step={s} depth={depth + 1} />
+          ))}
+        </div>
+      )}
+      {step.whenFalse?.length > 0 && (
+        <div className="ml-2 mt-0.5">
+          <div className="flex items-center gap-1.5 mb-0.5 ml-4">
+            <span className="w-2 h-2 rounded-full bg-red-500" />
+            <span className="text-2xs font-semibold text-red-600">{t('playground:stepLabels.whenFalse', { defaultValue: 'When FALSE' })}:</span>
+          </div>
+          {step.whenFalse.map((s: any, i: number) => (
+            <StepDocItem key={`f-${s.step || i}`} step={s} depth={depth + 1} />
+          ))}
+        </div>
+      )}
+
+      {/* Loop body */}
+      {step.repeats?.length > 0 && (
+        <div className="ml-2 mt-0.5">
+          <div className="flex items-center gap-1.5 mb-0.5 ml-4">
+            <span className="text-2xs font-semibold text-purple-600">{t('playground:stepLabels.eachIteration', { defaultValue: 'Each iteration' })}:</span>
+          </div>
+          {step.repeats.map((s: any, i: number) => (
+            <StepDocItem key={`r-${s.step || i}`} step={s} depth={depth + 1} />
+          ))}
+        </div>
+      )}
+
+      {/* TRY/CATCH */}
+      {step.protectedSteps?.length > 0 && (
+        <div className="ml-2 mt-0.5">
+          <div className="flex items-center gap-1.5 mb-0.5 ml-4">
+            <span className="text-2xs font-semibold text-blue-600">{t('playground:stepLabels.protectedOps', { defaultValue: 'Protected operations' })}:</span>
+          </div>
+          {step.protectedSteps.map((s: any, i: number) => (
+            <StepDocItem key={`p-${s.step || i}`} step={s} depth={depth + 1} />
+          ))}
+        </div>
+      )}
+      {step.errorHandling?.length > 0 && (
+        <div className="ml-2 mt-0.5">
+          <div className="flex items-center gap-1.5 mb-0.5 ml-4">
+            <span className="text-2xs font-semibold text-red-600">{t('playground:stepLabels.onError', { defaultValue: 'On error' })}:</span>
+          </div>
+          {step.errorHandling.map((s: any, i: number) => (
+            <StepDocItem key={`e-${s.step || i}`} step={s} depth={depth + 1} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

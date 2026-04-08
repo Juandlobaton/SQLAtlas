@@ -6,6 +6,7 @@ export class GetSystemStatusUseCase {
     private readonly tenantRepo: ITenantRepository,
     private readonly registrationMode: 'closed' | 'invite-only' | 'open',
     private readonly multiTenant: boolean,
+    private readonly microsoftSso: boolean = false,
   ) {}
 
   async execute(): Promise<SystemStatusOutput> {
@@ -14,6 +15,7 @@ export class GetSystemStatusUseCase {
       needsSetup: tenantCount === 0,
       registrationMode: this.registrationMode,
       multiTenant: this.multiTenant,
+      microsoftSso: this.microsoftSso,
     };
   }
 }

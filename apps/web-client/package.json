@@ -11,8 +11,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^3.0.0",
     "@sqlatlas/shared-types": "workspace:*",
     "@tanstack/react-query": "^5.65.0",
+    "@xyflow/react": "^12.10.2",
     "clsx": "^2.1.0",
     "cytoscape": "^3.31.0",
     "cytoscape-cola": "^2.5.1",
@@ -25,6 +27,7 @@
     "react-cytoscapejs": "^2.0.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^17.0.2",
+    "react-resizable-panels": "^4.9.0",
     "react-router-dom": "^7.5.0",
     "react-syntax-highlighter": "^15.6.0",
     "tailwind-merge": "^3.0.0",

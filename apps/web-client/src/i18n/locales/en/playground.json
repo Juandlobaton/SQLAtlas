@@ -56,5 +56,38 @@
     "searchPlaceholder": "Search procedure...",
     "noResults": "No procedures found",
     "lines": "lines"
+  },
+  "stepTypes": {
+    "setup": "Setup",
+    "query": "Query",
+    "modify": "Modify",
+    "call": "Call",
+    "decision": "Decision",
+    "loop": "Loop",
+    "protection": "Protection",
+    "error": "Error",
+    "result": "Result",
+    "transaction": "Transaction",
+    "operation": "Operation"
+  },
+  "stepLabels": {
+    "condition": "Condition",
+    "whenTrue": "When TRUE",
+    "whenFalse": "When FALSE",
+    "eachIteration": "Each iteration",
+    "protectedOps": "Protected operations",
+    "onError": "On error",
+    "processTitle": "Execution Process",
+    "processHint": "Step-by-step process documentation with source SQL references.",
+    "lines": "L{{start}}–L{{end}}",
+    "linesSingle": "L{{line}}",
+    "showMore": "Show more",
+    "showLess": "Show less"
+  },
+  "commentLang": {
+    "label": "Comments",
+    "en": "English",
+    "es": "Spanish",
+    "pt": "Portuguese"
   }
 }

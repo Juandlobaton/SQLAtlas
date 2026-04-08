@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Network, RotateCcw, Loader2, Database } from 'lucide-react';
 import { DependencyGraph } from '@/features/visualization/components/DependencyGraph';
 import { NodeDetailPanel } from '@/features/visualization/components/NodeDetailPanel';
 import { useGraphData, type GraphData } from '@/features/visualization/hooks/useGraphData';
-import { useConnections } from '@/shared/hooks/useConnections';
+import { useGlobalConnection } from '@/shared/hooks/useGlobalConnection';
+import { useStudioContext } from '@/shared/hooks/useStudioContext';
 import { cn } from '@/shared/lib/utils';
 
 const LAYOUT_IDS = ['etl-flow', 'hierarchical', 'concentric', 'force', 'circle'] as const;
@@ -12,19 +13,16 @@ const LAYOUT_IDS = ['etl-flow', 'hierarchical', 'concentric', 'force', 'circle']
 type ViewMode = 'connected' | 'all' | 'business' | 'high-complexity';
 const VIEW_MODE_IDS: ViewMode[] = ['connected', 'business', 'high-complexity', 'all'];
 
-// Schemas that are business logic (not PostGIS/system)
 const BUSINESS_SCHEMAS = new Set(['billing', 'components', 'products', 'inventory', 'sales', 'users', 'store', 'services', 'social', 'vehicles', 'scheduling', 'subscriptions', 'saga', 'storage', 'app', 'audit', 'catalog', 'marketplace']);
 
 export function GraphPage() {
   const { t } = useTranslation(['graph', 'common']);
-  const { data: connections } = useConnections();
-  const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
-  const activeConnectionId = selectedConnectionId || (connections?.[0] as any)?.id || null;
+  const { connectionId: activeConnectionId, setConnectionId, connections } = useGlobalConnection();
 
   const { data, isLoading, selectedNode, setSelectedNode, highlightedPath, highlightCallChain, clearHighlight } = useGraphData(activeConnectionId);
-  const [layout, setLayout] = useState('etl-flow');
-  const [viewMode, setViewMode] = useState<ViewMode>('connected');
-  const [schemaFilter, setSchemaFilter] = useState<string>('');
+  const [layout, setLayout] = useStudioContext('graph', 'layout', 'etl-flow');
+  const [viewMode, setViewMode] = useStudioContext<ViewMode>('graph', 'viewMode', 'connected');
+  const [schemaFilter, setSchemaFilter] = useStudioContext('graph', 'schemaFilter', '');
 
   // Get unique schemas for filter dropdown
   const schemas = useMemo(() => {
@@ -84,8 +82,8 @@ export function GraphPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* Connection selector */}
           {connections && connections.length > 0 && (
-            <select value={activeConnectionId || ''} onChange={(e) => setSelectedConnectionId(e.target.value || null)} className="input w-44 text-xs">
-              {(connections as any[]).map((c: any) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+            <select value={activeConnectionId || ''} onChange={(e) => setConnectionId(e.target.value || null)} className="input w-44 text-xs">
+              {connections.map((c: any) => (<option key={c.id} value={c.id}>{c.name}</option>))}
             </select>
           )}
 

@@ -5,7 +5,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/utils';
-import { useConnections } from '@/shared/hooks/useConnections';
+import { useGlobalConnection } from '@/shared/hooks/useGlobalConnection';
+import { useStudioContext } from '@/shared/hooks/useStudioContext';
 import { useERDiagram, type ERTable } from '@/shared/hooks/useTables';
 import { ERDiagram, type ERDiagramHandle } from '@/features/visualization/components/ERDiagram';
 
@@ -22,15 +23,13 @@ const SCHEMA_COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#
 
 export function ERDiagramPage() {
   const { t } = useTranslation(['common', 'nav']);
-  const { data: connections } = useConnections();
-  const [connectionId, setConnectionId] = useState<string | null>(null);
-  const activeId = connectionId || (connections?.[0] as any)?.id || null;
+  const { connectionId: activeId, setConnectionId, connections } = useGlobalConnection();
 
-  const [schemaFilter, setSchemaFilter] = useState('');
-  const [layout, setLayout] = useState<string>('fcose');
+  const [schemaFilter, setSchemaFilter] = useStudioContext('er-diagram', 'schemaFilter', '');
+  const [layout, setLayout] = useStudioContext('er-diagram', 'layout', 'fcose');
   const [selectedTable, setSelectedTable] = useState<ERTable | null>(null);
   const [tableSearch, setTableSearch] = useState('');
-  const [groupBySchema, setGroupBySchema] = useState(false);
+  const [groupBySchema, setGroupBySchema] = useStudioContext('er-diagram', 'groupBySchema', false);
   const [isLayouting, setIsLayouting] = useState(false);
   const diagramRef = useRef<ERDiagramHandle>(null);
 
@@ -70,55 +69,49 @@ export function ERDiagramPage() {
   }, [selectedTable, erData]);
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col animate-fade-in">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <Workflow className="w-5 h-5 text-brand-500" />
-            {t('nav:erDiagram')}
-          </h1>
-          <p className="text-surface-500 text-xs mt-0.5">
+    <div className="h-full flex flex-col">
+      {/* Compact toolbar */}
+      <div className="h-10 flex-none flex items-center justify-between px-3 border-b border-surface-200 bg-surface-50/80">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2">
+            <Workflow className="w-4 h-4 text-brand-500 flex-shrink-0" />
+            <span className="text-sm font-semibold truncate">{t('nav:erDiagram')}</span>
+          </div>
+          <span className="text-[10px] text-surface-400 tabular-nums hidden sm:inline">
             {erData
               ? `${erData.tables.length} tables, ${erData.relationships.length} relationships`
               : t('common:loading')}
-          </p>
+          </span>
         </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Connection */}
+        <div className="flex items-center gap-2">
           {connections && (connections as any[]).length > 0 && (
             <select
               value={activeId || ''}
-              onChange={(e) => { setConnectionId(e.target.value); setSelectedTable(null); setSchemaFilter(''); }}
-              className="input w-44 text-xs"
+              onChange={(e) => { setConnectionId(e.target.value || null); setSelectedTable(null); }}
+              className="input w-44 text-xs h-7"
             >
-              {(connections as any[]).map((c: any) => (
+              {connections.map((c: any) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           )}
-
-          {/* Schema filter */}
           <select
             value={schemaFilter}
             onChange={(e) => { setSchemaFilter(e.target.value); setSelectedTable(null); }}
-            className="input w-44 text-xs"
+            className="input w-40 text-xs h-7"
           >
             <option value="">All schemas ({erData?.tables.length || 0})</option>
             {schemas.map(([s, count]) => (
               <option key={s} value={s}>{s} ({count})</option>
             ))}
           </select>
-
-          {/* Layout buttons */}
-          <div className="flex items-center gap-0.5 bg-surface-100 rounded-lg p-0.5">
+          <div className="flex items-center gap-0.5 bg-surface-100 rounded-md p-0.5">
             {LAYOUT_IDS.map(id => (
               <button
                 key={id}
                 onClick={() => setLayout(id)}
                 className={cn(
-                  'px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer',
+                  'px-2 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer',
                   layout === id
                     ? 'bg-brand-600 text-white shadow-sm'
                     : 'text-surface-500 hover:text-surface-700 hover:bg-surface-200/60',
@@ -128,12 +121,10 @@ export function ERDiagramPage() {
               </button>
             ))}
           </div>
-
-          {/* Group by schema toggle */}
           <button
             onClick={() => setGroupBySchema(!groupBySchema)}
             className={cn(
-              'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer border',
+              'flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer border',
               groupBySchema
                 ? 'bg-brand-600/10 border-brand-500/30 text-brand-500'
                 : 'bg-surface-100 border-surface-200/50 text-surface-500 hover:text-surface-700',
@@ -147,7 +138,7 @@ export function ERDiagramPage() {
 
       {/* Hint for large graphs */}
       {isLargeGraph && !schemaFilter && (
-        <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg bg-brand-500/5 border border-brand-500/15 text-xs text-brand-500">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-brand-500/5 border-b border-brand-500/15 text-xs text-brand-500">
           <Info className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Filter by schema for a clearer view — {erData?.tables.length} tables loaded</span>
           <div className="ml-auto flex gap-1">
@@ -162,7 +153,7 @@ export function ERDiagramPage() {
       )}
 
       {/* Graph + Controls + Detail Panel */}
-      <div className="flex-1 flex rounded-xl border border-surface-200 overflow-hidden">
+      <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 relative">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">

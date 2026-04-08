@@ -110,7 +110,9 @@
     "orgName": "Nome da Organização",
     "orgPlaceholder": "Minha Empresa",
     "orgSlug": "Slug da Organização",
-    "orgSlugPlaceholder": "minha-empresa"
+    "orgSlugPlaceholder": "minha-empresa",
+    "orContinueWith": "ou",
+    "signInMicrosoft": "Entrar com Microsoft"
   },
   "badges": {
     "temp": "temporário",

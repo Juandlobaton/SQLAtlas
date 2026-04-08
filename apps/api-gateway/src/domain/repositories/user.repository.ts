@@ -4,6 +4,7 @@ import type { CreateUser } from '../types';
 export interface IUserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(tenantId: string, email: string): Promise<User | null>;
+  findByExternalId(tenantId: string, externalId: string): Promise<User | null>;
   findByTenant(tenantId: string): Promise<User[]>;
   countByTenant(tenantId: string): Promise<number>;
   create(data: CreateUser): Promise<User>;

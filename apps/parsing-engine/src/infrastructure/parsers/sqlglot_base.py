@@ -23,6 +23,8 @@ from src.domain.services.sql_parser import ISqlParser
 from src.domain.value_objects.object_type import ObjectType
 from src.domain.value_objects.severity import Severity
 from src.domain.value_objects.sql_hash import SqlHash
+from src.infrastructure.analyzers.auto_doc_generator import AutoDocGenerator
+from src.infrastructure.analyzers.hybrid_flow_builder import HybridFlowBuilder
 from src.infrastructure.analyzers.variable_flow_analyzer import VariableFlowAnalyzer
 
 if TYPE_CHECKING:
@@ -375,45 +377,14 @@ class SqlGlotBaseParser(ISqlParser):
 
     # ── Flow tree builder ───────────────────────────────────────────
 
+    _flow_builder = HybridFlowBuilder()
+
     def _build_flow_tree(self, sql: str) -> FlowNode:
-        root = FlowNode(node_id="start", node_type="start", label="Start", line_number=1)
-
-        lines = sql.split("\n")
-        node_counter = 0
-        for i, line in enumerate(lines, 1):
-            stripped = line.strip().upper()
-            if not stripped or stripped.startswith(("--", "/*")):
-                continue
-
-            node_type = None
-            if re.match(r"\bIF\b", stripped):
-                node_type = "condition"
-            elif re.match(r"\b(WHILE|LOOP|FOR)\b", stripped):
-                node_type = "loop"
-            elif re.match(r"\b(EXEC|EXECUTE|CALL)\b", stripped):
-                node_type = "call"
-            elif re.match(r"\b(INSERT|UPDATE|DELETE|MERGE|SELECT\s+INTO)\b", stripped):
-                node_type = "statement"
-            elif re.match(r"\b(RETURN|RAISE|RAISERROR|THROW)\b", stripped):
-                node_type = "return" if "RETURN" in stripped else "error_handler"
-            elif re.match(r"\b(BEGIN\s+TRY|BEGIN\s+CATCH|EXCEPTION)\b", stripped):
-                node_type = "error_handler"
-
-            if node_type:
-                node_counter += 1
-                root.children.append(FlowNode(
-                    node_id=f"n{node_counter}",
-                    node_type=node_type,
-                    label=line.strip()[:80],
-                    line_number=i,
-                ))
-
-        root.children.append(FlowNode(
-            node_id="end", node_type="end", label="End", line_number=len(lines)
-        ))
-        return root
+        return self._flow_builder.build_flow_tree(sql, self.dialect)
 
     # ── Auto-documentation ──────────────────────────────────────────
+
+    _doc_generator = AutoDocGenerator()
 
     def _generate_auto_doc(
         self,
@@ -423,49 +394,13 @@ class SqlGlotBaseParser(ISqlParser):
         deps: list[DependencyRef],
         complexity: ComplexityMetrics | None,
         return_type: str | None = None,
+        raw_sql: str | None = None,
+        flow_tree: FlowNode | None = None,
     ) -> dict[str, Any]:
-        tables_accessed = [
-            {"tableName": r.full_name, "operation": r.operation}
-            for r in table_refs
-        ]
-
-        side_effects = [
-            f"{r.operation} on {r.full_name}"
-            for r in table_refs
-            if r.is_write_operation()
-        ]
-
-        called_procs = [d.target_name for d in deps if d.is_call() and not d.is_dynamic]
-        if called_procs:
-            side_effects.append(f"Calls: {', '.join(called_procs)}")
-
-        param_docs = {
-            p.name: f"({p.mode}) {p.data_type}"
-            + (f" = {p.default_value}" if p.has_default() else "")
-            for p in params
-        }
-
-        read_tables = [r.full_name for r in table_refs if r.is_read_operation()]
-        write_tables = [r.full_name for r in table_refs if r.is_write_operation()]
-        summary_parts = [f"Procedure {name}"]
-        if read_tables:
-            summary_parts.append(f"reads from {', '.join(read_tables[:3])}")
-        if write_tables:
-            summary_parts.append(f"writes to {', '.join(write_tables[:3])}")
-
-        return {
-            "summary": ". ".join(summary_parts),
-            "description": (
-                f"{'Function' if return_type else 'Procedure'} with {len(params)} parameters, "
-                f"accessing {len(table_refs)} tables, "
-                f"calling {len(called_procs)} other procedures."
-            ),
-            "parameterDocs": param_docs,
-            "returns": return_type,
-            "sideEffects": side_effects,
-            "tablesAccessed": tables_accessed,
-            "complexity": complexity.to_dict() if complexity else None,
-        }
+        return self._doc_generator.generate_enhanced(
+            name, params, table_refs, deps, complexity, return_type,
+            raw_sql=raw_sql, flow_tree=flow_tree,
+        )
 
     # ── Anonymous block fallback ────────────────────────────────────
 

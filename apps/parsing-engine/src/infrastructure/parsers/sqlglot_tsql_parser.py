@@ -55,8 +55,11 @@ class SqlGlotTSqlParser(SqlGlotBaseParser):
         # T-SQL-specific: linked server references
         self._extract_linked_server_refs(full_sql, deps)
 
+        flow_tree = self._build_flow_tree(full_sql) if obj_type != ObjectType.VIEW else None
+
         auto_doc = self._generate_auto_doc(
-            object_name, params, table_refs, deps, complexity, return_type
+            object_name, params, table_refs, deps, complexity, return_type,
+            raw_sql=full_sql, flow_tree=flow_tree,
         )
 
         return ParseResult(
@@ -72,7 +75,7 @@ class SqlGlotTSqlParser(SqlGlotBaseParser):
             dependencies=deps,
             table_references=table_refs,
             security_findings=security,
-            flow_tree=self._build_flow_tree(full_sql) if obj_type != ObjectType.VIEW else None,
+            flow_tree=flow_tree,
             line_count=full_sql.count("\n") + 1,
             complexity=complexity,
             auto_doc=auto_doc,

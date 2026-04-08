@@ -111,7 +111,9 @@
     "orgPlaceholder": "My Company",
     "orgSlug": "Organization Slug",
     "orgSlugPlaceholder": "my-company",
-    "registrationClosed": "Registration is disabled. Contact your administrator."
+    "registrationClosed": "Registration is disabled. Contact your administrator.",
+    "orContinueWith": "or",
+    "signInMicrosoft": "Sign in with Microsoft"
   },
   "setup": {
     "title": "Initial Setup",

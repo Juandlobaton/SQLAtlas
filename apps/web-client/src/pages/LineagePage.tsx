@@ -1,17 +1,23 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Network, Search, Loader2, Database, Table2, GitBranch, ChevronRight,
   ArrowRight, Workflow, Shield, Eye, Code,
-  LayoutGrid, List, Columns,
+  LayoutGrid, List, Columns, Key, Link2, Hash,
+  FolderOpen, Folder,
 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/utils';
 import { useConnections } from '@/shared/hooks/useConnections';
 import { useProcedures, useDependencyGraph, type ProcedureItem, type GraphNode, type GraphEdge } from '@/shared/hooks/useAnalysis';
+import { useTables, useTableDetail, type TableItem } from '@/shared/hooks/useTables';
 import { parserApi } from '@/shared/lib/api-client';
 
 type ViewMode = 'explorer' | 'lineage' | 'matrix' | 'impact';
+
+type SelectedItem =
+  | { kind: 'procedure'; data: ProcedureItem }
+  | { kind: 'table'; data: TableItem }
+  | null;
 
 const TYPE_ICONS: Record<string, { icon: typeof Database; color: string; bg: string; label: string }> = {
   procedure: { icon: Workflow, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30', label: 'PROC' },
@@ -21,18 +27,11 @@ const TYPE_ICONS: Record<string, { icon: typeof Database; color: string; bg: str
   table:     { icon: Table2, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30', label: 'TABLE' },
 };
 
-// Schema color palette — each schema gets a distinct accent
 const SCHEMA_COLORS = [
   'border-l-blue-500', 'border-l-emerald-500', 'border-l-purple-500',
   'border-l-amber-500', 'border-l-rose-500', 'border-l-cyan-500',
   'border-l-indigo-500', 'border-l-orange-500', 'border-l-teal-500',
   'border-l-pink-500', 'border-l-lime-500', 'border-l-sky-500',
-];
-const SCHEMA_DOT_COLORS = [
-  'bg-blue-500', 'bg-emerald-500', 'bg-purple-500',
-  'bg-amber-500', 'bg-rose-500', 'bg-cyan-500',
-  'bg-indigo-500', 'bg-orange-500', 'bg-teal-500',
-  'bg-pink-500', 'bg-lime-500', 'bg-sky-500',
 ];
 function schemaColorIndex(name: string): number {
   let hash = 0;
@@ -47,6 +46,10 @@ const OP_COLORS: Record<string, string> = {
   references: 'text-purple-400 bg-purple-500/10',
 };
 
+/* ═══════════════════════════════════════════════════════════════
+   MAIN PAGE
+   ═══════════════════════════════════════════════════════════════ */
+
 export function LineagePage() {
   const { t } = useTranslation(['lineage', 'common']);
   const { data: connections } = useConnections();
@@ -56,27 +59,35 @@ export function LineagePage() {
   const [view, setView] = useState<ViewMode>('explorer');
   const [search, setSearch] = useState('');
   const [schemaFilter, setSchemaFilter] = useState('');
-  const [selectedProc, setSelectedProc] = useState<ProcedureItem | null>(null);
+  const [selected, setSelected] = useState<SelectedItem>(null);
   const [flowData, setFlowData] = useState<any>(null);
   const [loadingFlow, setLoadingFlow] = useState(false);
 
   const { data: procData, isLoading: procsLoading } = useProcedures(activeId, { limit: 500, search: search || undefined, schema: schemaFilter || undefined });
+  const { data: tablesData, isLoading: tablesLoading } = useTables(activeId, { search: search || undefined, schema: schemaFilter || undefined });
   const { data: graphData } = useDependencyGraph(activeId);
 
   const procedures = procData?.items || [];
+  const tables = tablesData || [];
   const nodes = graphData?.nodes || [];
   const edges = graphData?.edges || [];
+  const isLoading = procsLoading || tablesLoading;
 
-  // Group by schema
+  // Unified schema grouping: schemas -> { procedures, tables }
   const schemas = useMemo(() => {
-    const map = new Map<string, ProcedureItem[]>();
+    const map = new Map<string, { procedures: ProcedureItem[]; tables: TableItem[] }>();
     for (const p of procedures) {
-      const list = map.get(p.schemaName) || [];
-      list.push(p);
-      map.set(p.schemaName, list);
+      if (!map.has(p.schemaName)) map.set(p.schemaName, { procedures: [], tables: [] });
+      map.get(p.schemaName)!.procedures.push(p);
+    }
+    for (const tbl of tables) {
+      if (!map.has(tbl.schemaName)) map.set(tbl.schemaName, { procedures: [], tables: [] });
+      map.get(tbl.schemaName)!.tables.push(tbl);
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [procedures]);
+  }, [procedures, tables]);
+
+  const selectedProc = selected?.kind === 'procedure' ? selected.data : null;
 
   // Lineage for selected procedure (deduplicated)
   const lineage = useMemo(() => {
@@ -84,7 +95,6 @@ export function LineagePage() {
     const nodeId = nodes.find(n => n.label === selectedProc.objectName)?.id;
     if (!nodeId) return { upstream: [], downstream: [], tables: [] };
 
-    // Deduplicate by target to avoid repeated edges
     const dedup = (arr: GraphEdge[]) => {
       const seen = new Set<string>();
       return arr.filter(e => {
@@ -103,7 +113,7 @@ export function LineagePage() {
   }, [selectedProc, nodes, edges]);
 
   const handleSelectProc = async (proc: ProcedureItem) => {
-    setSelectedProc(proc);
+    setSelected({ kind: 'procedure', data: proc });
     if (view === 'lineage') {
       setLoadingFlow(true);
       try {
@@ -112,6 +122,10 @@ export function LineagePage() {
       } catch { /* */ }
       finally { setLoadingFlow(false); }
     }
+  };
+
+  const handleSelectTable = (tbl: TableItem) => {
+    setSelected({ kind: 'table', data: tbl });
   };
 
   const findNodeLabel = (id: string) => nodes.find(n => n.id === id)?.label || id.replace('ext_', '').replace(/_/g, '.').slice(0, 30);
@@ -125,59 +139,54 @@ export function LineagePage() {
   ];
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Network className="w-6 h-6 text-brand-500" />
-            {t('title')}
-          </h1>
-          <p className="text-surface-500 text-sm mt-1">
-            {t('subtitle', { objects: procData?.total || 0, deps: edges.length })}
-          </p>
+    <div className="h-full flex flex-col">
+      {/* Compact toolbar */}
+      <div className="h-10 flex-none flex items-center justify-between px-3 border-b border-surface-200 bg-surface-50/80">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2">
+            <Network className="w-4 h-4 text-brand-500 flex-shrink-0" />
+            <span className="text-sm font-semibold truncate">{t('title')}</span>
+          </div>
+          <span className="text-[10px] text-surface-400 tabular-nums hidden sm:inline">
+            {procedures.length} procs &middot; {tables.length} tables &middot; {edges.length} deps
+          </span>
         </div>
         <div className="flex items-center gap-2">
           {connections && (connections as any[]).length > 0 && (
-            <select value={activeId || ''} onChange={(e) => { setConnectionId(e.target.value); setSelectedProc(null); setFlowData(null); }} className="input w-44 text-xs">
+            <select value={activeId || ''} onChange={(e) => { setConnectionId(e.target.value); setSelected(null); setFlowData(null); }}
+              className="input w-44 text-xs h-7">
               {(connections as any[]).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           )}
-          <div className="flex bg-surface-100 rounded-lg p-0.5">
+          <div className="flex bg-surface-100 rounded-md p-0.5">
             {views.map(({ id, labelKey, icon: Icon }) => (
               <button key={id} onClick={() => setView(id)} title={t(`descriptions.${id}`)}
-                className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                className={cn('flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-medium transition-all',
                   view === id ? 'bg-brand-600 text-white shadow-sm' : 'text-surface-500 hover:text-surface-700')}>
-                <Icon className="w-3.5 h-3.5" /> {t(labelKey)}
+                <Icon className="w-3.5 h-3.5" /> <span className="hidden lg:inline">{t(labelKey)}</span>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Description bar */}
-      <div className="mb-3 px-3 py-2 rounded-lg bg-surface-100/50 border border-surface-200/50">
-        <p className="text-xs text-surface-500">{t(`descriptions.${view}`)}</p>
-      </div>
-
-      {/* Search + Filter bar */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-surface-400" />
-          <input className="input pl-9 text-xs" placeholder={t('search')} value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
-        <select value={schemaFilter} onChange={(e) => setSchemaFilter(e.target.value)} className="input w-40 text-xs">
-          <option value="">{t('allSchemas')}</option>
-          {schemas.map(([s, items]) => <option key={s} value={s}>{s} ({items.length})</option>)}
-        </select>
-      </div>
-
       {/* Main content */}
-      <div className="flex-1 overflow-hidden rounded-xl border border-surface-200">
-        {procsLoading ? (
-          <div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
         ) : view === 'explorer' ? (
-          <ExplorerView schemas={schemas} selectedProc={selectedProc} onSelect={handleSelectProc} connectionId={activeId} />
+          <ExplorerView
+            schemas={schemas}
+            selected={selected}
+            onSelectProc={handleSelectProc}
+            onSelectTable={handleSelectTable}
+            connectionId={activeId}
+            search={search}
+            onSearchChange={setSearch}
+            schemaFilter={schemaFilter}
+            onSchemaFilterChange={setSchemaFilter}
+            allSchemaNames={schemas.map(([s]) => s)}
+          />
         ) : view === 'lineage' ? (
           <LineageView
             selectedProc={selectedProc}
@@ -199,96 +208,240 @@ export function LineagePage() {
   );
 }
 
-/* ── SCHEMA EXPLORER VIEW ── */
-function ExplorerView({ schemas, selectedProc, onSelect, connectionId }: {
-  schemas: [string, ProcedureItem[]][];
-  selectedProc: ProcedureItem | null;
-  onSelect: (p: ProcedureItem) => void;
+/* ═══════════════════════════════════════════════════════════════
+   EXPLORER VIEW — VS Code-style tree + workspace
+   ═══════════════════════════════════════════════════════════════ */
+
+function ExplorerView({
+  schemas, selected, onSelectProc, onSelectTable, connectionId,
+  search, onSearchChange, schemaFilter, onSchemaFilterChange, allSchemaNames,
+}: {
+  schemas: [string, { procedures: ProcedureItem[]; tables: TableItem[] }][];
+  selected: SelectedItem;
+  onSelectProc: (p: ProcedureItem) => void;
+  onSelectTable: (t: TableItem) => void;
   connectionId: string | null;
+  search: string;
+  onSearchChange: (s: string) => void;
+  schemaFilter: string;
+  onSchemaFilterChange: (s: string) => void;
+  allSchemaNames: string[];
 }) {
   const { t } = useTranslation(['lineage', 'common']);
-  const [expandedSchema, setExpandedSchema] = useState<string | null>(schemas[0]?.[0] || null);
+  const [expandedSchemas, setExpandedSchemas] = useState<Set<string>>(() => new Set(schemas[0] ? [schemas[0][0]] : []));
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
+    // Auto-expand first schema's groups
+    if (schemas[0]) {
+      const s = schemas[0][0];
+      return new Set([`${s}:procs`, `${s}:tables`]);
+    }
+    return new Set();
+  });
+
+  const toggleSchema = (name: string) => {
+    setExpandedSchemas(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+        // Auto-expand sub-groups when opening schema
+        setExpandedGroups(g => {
+          const ng = new Set(g);
+          ng.add(`${name}:procs`);
+          ng.add(`${name}:tables`);
+          return ng;
+        });
+      }
+      return next;
+    });
+  };
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
 
   return (
     <div className="flex h-full">
-      {/* Schema list */}
-      <div className="w-64 border-r border-surface-200 overflow-y-auto bg-surface-50">
-        <div className="p-3 border-b border-surface-200">
-          <h3 className="text-xs font-semibold text-surface-500 uppercase">{t('schemas')}</h3>
-        </div>
-        {schemas.map(([schema, items]) => (
-          <div key={schema}>
-            <button onClick={() => setExpandedSchema(expandedSchema === schema ? null : schema)}
-              className={cn('w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-surface-100 transition-colors border-l-2',
-                SCHEMA_COLORS[schemaColorIndex(schema)],
-                expandedSchema === schema && 'bg-brand-50 dark:bg-brand-900/20')}>
-              <div className="flex items-center gap-2">
-                <span className={cn('w-2 h-2 rounded-full flex-shrink-0', SCHEMA_DOT_COLORS[schemaColorIndex(schema)])} />
-                <span className="font-medium">{schema}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] bg-surface-200 dark:bg-surface-300 text-surface-600 px-1.5 py-0.5 rounded">{items.length}</span>
-                <ChevronRight className={cn('w-3 h-3 text-surface-400 transition-transform', expandedSchema === schema && 'rotate-90')} />
-              </div>
-            </button>
-            {expandedSchema === schema && (
-              <div className="bg-surface-100/50">
-                {items.map((proc) => {
-                  const cfg = TYPE_ICONS[proc.objectType] || TYPE_ICONS.procedure;
-                  const Icon = cfg.icon;
-                  return (
-                    <button key={proc.id} onClick={() => onSelect(proc)}
-                      className={cn('w-full flex items-center gap-2 px-6 py-2 text-xs hover:bg-surface-200/50 transition-colors',
-                        selectedProc?.id === proc.id && 'bg-brand-100 dark:bg-brand-900/30')}>
-                      <Icon className={cn('w-3.5 h-3.5', cfg.color)} />
-                      <span className="font-mono truncate flex-1 text-left">{proc.objectName}</span>
-                      {proc.estimatedComplexity && proc.estimatedComplexity > 10 && (
-                        <span title={t('common:tooltips.cc')} className="text-[9px] px-1 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 cursor-help">CC={proc.estimatedComplexity}</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+      {/* Sidebar tree */}
+      <div className="w-64 flex-none flex flex-col border-r border-surface-200 bg-surface-50">
+        {/* Search + filter */}
+        <div className="p-2 space-y-1.5 border-b border-surface-200">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-400" />
+            <input
+              className="input pl-8 text-xs h-7 w-full"
+              placeholder={t('search')}
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
           </div>
-        ))}
+          <select
+            value={schemaFilter}
+            onChange={(e) => onSchemaFilterChange(e.target.value)}
+            className="input text-xs h-7 w-full"
+          >
+            <option value="">{t('allSchemas')}</option>
+            {allSchemaNames.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+
+        {/* Tree */}
+        <div className="flex-1 overflow-y-auto">
+          {schemas.length === 0 && (
+            <div className="p-4 text-center text-surface-400 text-xs">
+              {t('selectProcedure', { defaultValue: 'No objects found' })}
+            </div>
+          )}
+          {schemas.map(([schema, { procedures: procs, tables: tbls }]) => {
+            const isExpanded = expandedSchemas.has(schema);
+            const ci = schemaColorIndex(schema);
+            const totalCount = procs.length + tbls.length;
+
+            return (
+              <div key={schema}>
+                {/* Schema header */}
+                <button
+                  onClick={() => toggleSchema(schema)}
+                  className={cn(
+                    'w-full flex items-center gap-1.5 px-2 py-1.5 text-xs hover:bg-surface-100 transition-colors border-l-2',
+                    SCHEMA_COLORS[ci],
+                    isExpanded && 'bg-surface-100/60',
+                  )}
+                >
+                  <ChevronRight className={cn('w-3 h-3 text-surface-400 transition-transform flex-shrink-0', isExpanded && 'rotate-90')} />
+                  {isExpanded
+                    ? <FolderOpen className="w-3.5 h-3.5 text-surface-500 flex-shrink-0" />
+                    : <Folder className="w-3.5 h-3.5 text-surface-500 flex-shrink-0" />
+                  }
+                  <span className="font-medium flex-1 text-left truncate">{schema}</span>
+                  <span className="text-[9px] text-surface-400 tabular-nums flex-shrink-0">{totalCount}</span>
+                </button>
+
+                {/* Schema children */}
+                {isExpanded && (
+                  <div>
+                    {/* Procedures group */}
+                    {procs.length > 0 && (
+                      <>
+                        <button
+                          onClick={() => toggleGroup(`${schema}:procs`)}
+                          className="w-full flex items-center gap-1.5 pl-6 pr-2 py-1 text-[10px] text-surface-500 hover:bg-surface-100/80 transition-colors uppercase font-semibold tracking-wider"
+                        >
+                          <ChevronRight className={cn('w-2.5 h-2.5 transition-transform', expandedGroups.has(`${schema}:procs`) && 'rotate-90')} />
+                          <span className="flex-1 text-left">{t('common:objectTypes.procedures', { defaultValue: 'Procedures' })}</span>
+                          <span className="text-[9px] font-normal text-surface-400 tabular-nums">{procs.length}</span>
+                        </button>
+                        {expandedGroups.has(`${schema}:procs`) && procs.map(proc => {
+                          const cfg = TYPE_ICONS[proc.objectType] || TYPE_ICONS.procedure;
+                          const ProcIcon = cfg.icon;
+                          const isSelected = selected?.kind === 'procedure' && selected.data.id === proc.id;
+                          return (
+                            <button
+                              key={proc.id}
+                              onClick={() => onSelectProc(proc)}
+                              className={cn(
+                                'w-full flex items-center gap-1.5 pl-10 pr-2 py-1 text-[11px] hover:bg-surface-200/50 transition-colors',
+                                isSelected && 'bg-brand-500/10 text-brand-700 dark:text-brand-300',
+                              )}
+                            >
+                              <ProcIcon className={cn('w-3.5 h-3.5 flex-shrink-0', cfg.color)} />
+                              <span className="font-mono truncate flex-1 text-left">{proc.objectName}</span>
+                              {proc.estimatedComplexity != null && proc.estimatedComplexity > 10 && (
+                                <span className="text-[8px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-500 font-bold flex-shrink-0">
+                                  CC{proc.estimatedComplexity}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </>
+                    )}
+
+                    {/* Tables group */}
+                    {tbls.length > 0 && (
+                      <>
+                        <button
+                          onClick={() => toggleGroup(`${schema}:tables`)}
+                          className="w-full flex items-center gap-1.5 pl-6 pr-2 py-1 text-[10px] text-surface-500 hover:bg-surface-100/80 transition-colors uppercase font-semibold tracking-wider"
+                        >
+                          <ChevronRight className={cn('w-2.5 h-2.5 transition-transform', expandedGroups.has(`${schema}:tables`) && 'rotate-90')} />
+                          <span className="flex-1 text-left">{t('common:objectTypes.tables', { defaultValue: 'Tables' })}</span>
+                          <span className="text-[9px] font-normal text-surface-400 tabular-nums">{tbls.length}</span>
+                        </button>
+                        {expandedGroups.has(`${schema}:tables`) && tbls.map(tbl => {
+                          const isView = tbl.tableType === 'view';
+                          const cfg = isView ? TYPE_ICONS.view : TYPE_ICONS.table;
+                          const TblIcon = cfg.icon;
+                          const isSelected = selected?.kind === 'table' && selected.data.id === tbl.id;
+                          return (
+                            <button
+                              key={tbl.id}
+                              onClick={() => onSelectTable(tbl)}
+                              className={cn(
+                                'w-full flex items-center gap-1.5 pl-10 pr-2 py-1 text-[11px] hover:bg-surface-200/50 transition-colors',
+                                isSelected && 'bg-brand-500/10 text-brand-700 dark:text-brand-300',
+                              )}
+                            >
+                              <TblIcon className={cn('w-3.5 h-3.5 flex-shrink-0', cfg.color)} />
+                              <span className="font-mono truncate flex-1 text-left">{tbl.tableName}</span>
+                              <span className="text-[8px] text-surface-400 flex-shrink-0">{tbl.columns.length}c</span>
+                            </button>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Detail panel */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {!selectedProc ? (
+      {/* Workspace panel */}
+      <div className="flex-1 overflow-y-auto p-5">
+        {!selected ? (
           <div className="flex items-center justify-center h-full text-surface-400">
             <div className="text-center">
-              <Database className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">{t('selectProcedure')}</p>
+              <Database className="w-10 h-10 mx-auto mb-3 opacity-20" />
+              <p className="text-sm">{t('selectProcedure', { defaultValue: 'Select an object from the tree' })}</p>
             </div>
           </div>
+        ) : selected.kind === 'procedure' ? (
+          <ProcedureDetail proc={selected.data} connectionId={connectionId} />
         ) : (
-          <ProcedureDetail proc={selectedProc} connectionId={connectionId} />
+          <TableDetail table={selected.data} connectionId={connectionId} />
         )}
       </div>
     </div>
   );
 }
 
-/* ── PROCEDURE DETAIL CARD ── */
-function ProcedureDetail({ proc, connectionId }: { proc: ProcedureItem; connectionId: string | null }) {
+/* ═══════════════════════════════════════════════════════════════
+   PROCEDURE DETAIL (workspace view)
+   ═══════════════════════════════════════════════════════════════ */
+
+function ProcedureDetail({ proc }: { proc: ProcedureItem; connectionId: string | null }) {
   const { t } = useTranslation(['lineage', 'common']);
-  const navigate = useNavigate();
   const cfg = TYPE_ICONS[proc.objectType] || TYPE_ICONS.procedure;
   const Icon = cfg.icon;
   const cc = proc.estimatedComplexity || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <div className={cn('w-12 h-12 rounded-xl border flex items-center justify-center', cfg.bg)}>
-          <Icon className={cn('w-6 h-6', cfg.color)} />
+      <div className="flex items-start gap-3">
+        <div className={cn('w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0', cfg.bg)}>
+          <Icon className={cn('w-5 h-5', cfg.color)} />
         </div>
-        <div className="flex-1">
-          <h2 className="text-lg font-bold font-mono">{proc.fullQualifiedName}</h2>
-          <div className="flex items-center gap-2 mt-1">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-base font-bold font-mono truncate">{proc.fullQualifiedName}</h2>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className="text-xs text-surface-500">{proc.objectType} / {proc.language}</span>
             <span className="text-xs text-surface-500">{t('detail.lines', { count: proc.lineCount })}</span>
             <span title={t('common:tooltips.cc')} className={cn('text-xs px-1.5 py-0.5 rounded font-medium cursor-help',
@@ -298,24 +451,6 @@ function ProcedureDetail({ proc, connectionId }: { proc: ProcedureItem; connecti
               'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400')}>
               CC={cc}
             </span>
-          </div>
-          <div className="flex items-center gap-2 mt-2">
-            <button
-              onClick={() => connectionId && navigate(`/explorer/${connectionId}/${proc.id}`)}
-              className="btn-ghost text-xs"
-              title={t('detail.openInExplorer', { defaultValue: 'Open in SQL Explorer' })}
-            >
-              <Code className="w-3.5 h-3.5" />
-              <span>{t('detail.openInExplorer', { defaultValue: 'SQL Explorer' })}</span>
-            </button>
-            <button
-              onClick={() => connectionId && navigate(`/flow/${connectionId}/${proc.id}`)}
-              className="btn-ghost text-xs"
-              title={t('detail.openInFlow', { defaultValue: 'View in Flow Analysis' })}
-            >
-              <Workflow className="w-3.5 h-3.5" />
-              <span>{t('detail.openInFlow', { defaultValue: 'Flow Analysis' })}</span>
-            </button>
           </div>
         </div>
       </div>
@@ -382,7 +517,7 @@ function ProcedureDetail({ proc, connectionId }: { proc: ProcedureItem; connecti
       {/* Source preview */}
       <div>
         <h4 className="text-xs font-semibold text-surface-500 uppercase mb-2">{t('detail.sourceCode')}</h4>
-        <pre className="bg-surface-100 dark:bg-surface-200/50 rounded-lg p-4 overflow-x-auto text-[11px] font-mono leading-relaxed text-surface-700 max-h-64 overflow-y-auto">
+        <pre className="bg-surface-100 dark:bg-surface-200/50 rounded-lg p-4 overflow-x-auto text-[11px] font-mono leading-relaxed text-surface-700 max-h-80 overflow-y-auto">
           {proc.rawDefinition?.split('\n').map((line, i) => (
             <div key={i} className="flex hover:bg-surface-200/50 dark:hover:bg-surface-300/20">
               <span className="text-surface-400 w-8 text-right mr-3 select-none flex-shrink-0">{i + 1}</span>
@@ -395,7 +530,164 @@ function ProcedureDetail({ proc, connectionId }: { proc: ProcedureItem; connecti
   );
 }
 
-/* ── LINEAGE VIEW ── */
+/* ═══════════════════════════════════════════════════════════════
+   TABLE DETAIL (workspace view)
+   ═══════════════════════════════════════════════════════════════ */
+
+function TableDetail({ table, connectionId }: { table: TableItem; connectionId: string | null }) {
+  const { data: detail } = useTableDetail(connectionId, table.id);
+  const isView = table.tableType === 'view';
+  const cfg = isView ? TYPE_ICONS.view : TYPE_ICONS.table;
+  const Icon = cfg.icon;
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <div className={cn('w-10 h-10 rounded-xl border flex items-center justify-center flex-shrink-0', cfg.bg)}>
+          <Icon className={cn('w-5 h-5', cfg.color)} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-base font-bold font-mono truncate">{table.schemaName}.{table.tableName}</h2>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-bold uppercase',
+              isView ? 'bg-cyan-500/10 text-cyan-500' : 'bg-emerald-500/10 text-emerald-500')}>
+              {isView ? 'VIEW' : 'TABLE'}
+            </span>
+            <span className="text-xs text-surface-500">{table.columns.length} columns</span>
+            {table.primaryKey.length > 0 && (
+              <span className="text-xs text-surface-500">PK: {table.primaryKey.join(', ')}</span>
+            )}
+            {table.estimatedRowCount != null && (
+              <span className="text-xs text-surface-500">~{table.estimatedRowCount.toLocaleString()} rows</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Columns */}
+      <div>
+        <h4 className="text-xs font-semibold text-surface-500 uppercase mb-2">Columns</h4>
+        <div className="rounded-lg border border-surface-200 overflow-hidden">
+          <table className="w-full text-xs">
+            <thead className="bg-surface-100">
+              <tr>
+                <th className="px-3 py-2 text-left text-surface-500 font-medium">Name</th>
+                <th className="px-3 py-2 text-left text-surface-500 font-medium">Type</th>
+                <th className="px-3 py-2 text-left text-surface-500 font-medium">Nullable</th>
+                <th className="px-3 py-2 text-left text-surface-500 font-medium">Default</th>
+                <th className="px-3 py-2 text-left text-surface-500 font-medium">Key</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-200">
+              {table.columns.map((col, i) => (
+                <tr key={i} className="hover:bg-surface-50 dark:hover:bg-surface-100/50">
+                  <td className="px-3 py-1.5 font-mono font-medium">{col.columnName}</td>
+                  <td className="px-3 py-1.5 text-surface-500 font-mono">
+                    {col.dataType}{col.maxLength && col.maxLength > 0 ? `(${col.maxLength})` : ''}
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <span className={cn('text-[10px]', col.isNullable ? 'text-surface-400' : 'text-amber-400 font-bold')}>
+                      {col.isNullable ? 'YES' : 'NOT NULL'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-1.5 text-surface-400 font-mono text-[10px] max-w-[120px] truncate">{col.defaultValue || '-'}</td>
+                  <td className="px-3 py-1.5">
+                    <div className="flex items-center gap-1">
+                      {col.isPrimaryKey && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 text-[9px] font-bold">
+                          <Key className="w-2.5 h-2.5" /> PK
+                        </span>
+                      )}
+                      {col.isForeignKey && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 text-[9px] font-bold">
+                          <Link2 className="w-2.5 h-2.5" /> FK
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Foreign Keys */}
+      {table.foreignKeys.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold text-surface-500 uppercase mb-2">
+            <Link2 className="w-3 h-3 inline mr-1" />Foreign Keys
+          </h4>
+          <div className="space-y-1.5">
+            {table.foreignKeys.map((fk, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/5 border border-blue-500/15">
+                <Link2 className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs font-medium">{fk.constraintName}</p>
+                  <p className="text-[10px] text-surface-500">
+                    ({fk.columns.join(', ')}) &rarr; {fk.referencedTable} ({fk.referencedColumns.join(', ')})
+                  </p>
+                  <p className="text-[10px] text-surface-400">ON DELETE {fk.onDelete} / ON UPDATE {fk.onUpdate}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Indexes */}
+      {table.indexes.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold text-surface-500 uppercase mb-2">
+            <Hash className="w-3 h-3 inline mr-1" />Indexes
+          </h4>
+          <div className="space-y-1.5">
+            {table.indexes.map((idx, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-100/40 border border-surface-200/30">
+                <Hash className="w-3.5 h-3.5 text-surface-400 flex-shrink-0" />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-medium">{idx.indexName}</span>
+                    {idx.isPrimary && <span className="text-[9px] px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold">PRIMARY</span>}
+                    {idx.isUnique && !idx.isPrimary && <span className="text-[9px] px-1 py-0.5 rounded bg-blue-500/10 text-blue-500 font-bold">UNIQUE</span>}
+                  </div>
+                  <p className="text-[10px] text-surface-500">({idx.columns.join(', ')}) &mdash; {idx.indexType}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Accessed by procedures */}
+      {detail?.accessedBy && detail.accessedBy.length > 0 && (
+        <div>
+          <h4 className="text-xs font-semibold text-surface-500 uppercase mb-2">Accessed by</h4>
+          <div className="space-y-1">
+            {detail.accessedBy.map((access, i) => {
+              const opColor = access.operation === 'SELECT' ? 'text-emerald-400' :
+                              access.operation === 'INSERT' ? 'text-blue-400' :
+                              access.operation === 'UPDATE' ? 'text-amber-400' :
+                              access.operation === 'DELETE' ? 'text-red-400' : 'text-surface-400';
+              return (
+                <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded bg-surface-100/30">
+                  <span className={cn('text-[10px] font-bold uppercase', opColor)}>{access.operation}</span>
+                  <span className="font-mono text-[10px] text-surface-600">{access.procedureId}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LINEAGE VIEW
+   ═══════════════════════════════════════════════════════════════ */
+
 function LineageView({ selectedProc, procedures, lineage, flowData, loadingFlow, findNodeLabel, findNodeType, onSelect }: {
   selectedProc: ProcedureItem | null;
   procedures: ProcedureItem[];
@@ -410,15 +702,14 @@ function LineageView({ selectedProc, procedures, lineage, flowData, loadingFlow,
   if (!selectedProc) {
     return (
       <div className="flex h-full">
-        {/* Quick select list */}
         <div className="w-72 border-r border-surface-200 overflow-y-auto">
           <div className="p-3 border-b border-surface-200"><h3 className="text-xs font-semibold text-surface-500">{t('lineageView.selectToViewLineage')}</h3></div>
           {procedures.slice(0, 50).map(p => {
             const cfg = TYPE_ICONS[p.objectType] || TYPE_ICONS.procedure;
-            const Icon = cfg.icon;
+            const PIcon = cfg.icon;
             return (
               <button key={p.id} onClick={() => onSelect(p)} className="w-full flex items-center gap-2 px-4 py-2.5 text-xs hover:bg-surface-100 border-b border-surface-200/50">
-                <Icon className={cn('w-3.5 h-3.5', cfg.color)} />
+                <PIcon className={cn('w-3.5 h-3.5', cfg.color)} />
                 <span className="font-mono truncate">{p.objectName}</span>
               </button>
             );
@@ -432,13 +723,12 @@ function LineageView({ selectedProc, procedures, lineage, flowData, loadingFlow,
   }
 
   const cfg = TYPE_ICONS[selectedProc.objectType] || TYPE_ICONS.procedure;
-  const Icon = cfg.icon;
+  const CIcon = cfg.icon;
 
   return (
     <div className="p-6 overflow-y-auto h-full">
-      {/* Lineage diagram: upstream → [SELECTED] → downstream */}
       <div className="flex items-start gap-6 justify-center min-h-[300px]">
-        {/* Upstream (who calls me) */}
+        {/* Upstream */}
         <div className="space-y-2 min-w-[200px]">
           <h4 className="text-[10px] font-semibold text-surface-500 uppercase text-center mb-3 cursor-help" title={t('common:tooltips.upstream')}>{t('lineageView.upstream')}</h4>
           {lineage.upstream.length === 0 ? (
@@ -448,11 +738,11 @@ function LineageView({ selectedProc, procedures, lineage, flowData, loadingFlow,
           ))}
         </div>
 
-        {/* Center: selected procedure */}
+        {/* Center */}
         <div className="flex flex-col items-center gap-3 min-w-[220px]">
           <div className="text-[10px] font-semibold text-surface-500 uppercase mb-1">{t('lineageView.selected')}</div>
           <div className={cn('rounded-xl border-2 p-5 text-center shadow-lg', cfg.bg, 'border-brand-500')}>
-            <Icon className={cn('w-8 h-8 mx-auto mb-2', cfg.color)} />
+            <CIcon className={cn('w-8 h-8 mx-auto mb-2', cfg.color)} />
             <p className="font-mono font-bold text-sm">{selectedProc.objectName}</p>
             <p className="text-[10px] text-surface-500 mt-1">{selectedProc.schemaName} / {selectedProc.objectType}</p>
             <div className="flex items-center justify-center gap-2 mt-2">
@@ -460,7 +750,6 @@ function LineageView({ selectedProc, procedures, lineage, flowData, loadingFlow,
               <span className="badge-info text-[9px]">{t('detail.lines', { count: selectedProc.lineCount })}</span>
             </div>
           </div>
-          {/* Flow tree preview */}
           {loadingFlow ? (
             <Loader2 className="w-5 h-5 animate-spin text-brand-500" />
           ) : flowData?.flowTree?.children && (
@@ -482,7 +771,7 @@ function LineageView({ selectedProc, procedures, lineage, flowData, loadingFlow,
           )}
         </div>
 
-        {/* Downstream (what I call + tables) */}
+        {/* Downstream */}
         <div className="space-y-2 min-w-[200px]">
           <h4 className="text-[10px] font-semibold text-surface-500 uppercase text-center mb-3 cursor-help" title={t('common:tooltips.downstream')}>{t('lineageView.downstream')}</h4>
           {lineage.downstream.length === 0 && lineage.tables.length === 0 ? (
@@ -503,11 +792,11 @@ function LineageView({ selectedProc, procedures, lineage, flowData, loadingFlow,
   );
 }
 
-/* ── NODE CARD (for lineage) ── */
+/* ── NODE CARD ── */
 function NodeCard({ label, type, edgeType, direction }: { label: string; type: string; edgeType: string; direction: 'left' | 'right' }) {
   const { t } = useTranslation(['lineage', 'common']);
   const cfg = TYPE_ICONS[type] || TYPE_ICONS.procedure;
-  const Icon = cfg.icon;
+  const NIcon = cfg.icon;
   const opCfg = OP_COLORS[edgeType] || OP_COLORS.calls;
   const edgeLabel = edgeType === 'calls' ? 'EXEC' : edgeType === 'reads_from' ? 'READ' : edgeType === 'writes_to' ? 'WRITE' : edgeType;
   const edgeTooltip = edgeType === 'calls' ? t('common:tooltips.exec') : edgeType === 'reads_from' ? t('common:tooltips.crud') : edgeType === 'writes_to' ? t('common:tooltips.crud') : '';
@@ -516,7 +805,7 @@ function NodeCard({ label, type, edgeType, direction }: { label: string; type: s
     <div className="flex items-center gap-2">
       {direction === 'left' && <div className={cn('text-[9px] px-1.5 py-0.5 rounded font-bold cursor-help', opCfg)} title={edgeTooltip}>{edgeLabel}</div>}
       <div className={cn('flex items-center gap-2 rounded-lg border px-3 py-2 min-w-[160px] cursor-pointer hover:shadow-md transition-shadow', cfg.bg)}>
-        <Icon className={cn('w-4 h-4 flex-shrink-0', cfg.color)} />
+        <NIcon className={cn('w-4 h-4 flex-shrink-0', cfg.color)} />
         <div className="min-w-0">
           <p className="font-mono text-xs font-medium truncate">{label}</p>
           <p className="text-[9px] text-surface-500 uppercase">{cfg.label}</p>
@@ -527,14 +816,16 @@ function NodeCard({ label, type, edgeType, direction }: { label: string; type: s
   );
 }
 
-/* ── CRUD MATRIX VIEW ── */
+/* ═══════════════════════════════════════════════════════════════
+   CRUD MATRIX VIEW
+   ═══════════════════════════════════════════════════════════════ */
+
 function MatrixView({ edges, nodes, findNodeLabel }: {
   edges: GraphEdge[];
   nodes: GraphNode[];
   findNodeLabel: (id: string) => string;
 }) {
   const { t } = useTranslation(['lineage', 'common']);
-  // Build matrix: procedure → targets with types
   const matrix = useMemo(() => {
     const rows: { proc: string; targets: { name: string; type: string; op: string }[] }[] = [];
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
@@ -542,7 +833,6 @@ function MatrixView({ edges, nodes, findNodeLabel }: {
     for (const node of nodes) {
       const outEdges = edges.filter(e => e.source === node.id);
       if (outEdges.length === 0) continue;
-      // Deduplicate targets
       const seenTargets = new Set<string>();
       const targets = outEdges
         .map(e => ({
@@ -550,8 +840,8 @@ function MatrixView({ edges, nodes, findNodeLabel }: {
           type: nodeMap.get(e.target)?.objectType || (e.target.startsWith('ext_') ? 'external' : 'unknown'),
           op: e.dependencyType,
         }))
-        .filter(t => {
-          const key = `${t.name}-${t.op}`;
+        .filter(tItem => {
+          const key = `${tItem.name}-${tItem.op}`;
           if (seenTargets.has(key)) return false;
           seenTargets.add(key);
           return true;
@@ -603,7 +893,10 @@ function MatrixView({ edges, nodes, findNodeLabel }: {
   );
 }
 
-/* ── IMPACT ANALYSIS VIEW ── */
+/* ═══════════════════════════════════════════════════════════════
+   IMPACT ANALYSIS VIEW
+   ═══════════════════════════════════════════════════════════════ */
+
 function ImpactView({ edges, findNodeLabel, findNodeType }: {
   edges: GraphEdge[];
   findNodeLabel: (id: string) => string;
@@ -612,7 +905,6 @@ function ImpactView({ edges, findNodeLabel, findNodeType }: {
   const { t } = useTranslation(['lineage', 'common']);
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
 
-  // Find all unique targets (things that get called/read/written)
   const targets = useMemo(() => {
     const map = new Map<string, { id: string; label: string; type: string; incomingCount: number }>();
     for (const e of edges) {
@@ -630,29 +922,27 @@ function ImpactView({ edges, findNodeLabel, findNodeType }: {
 
   return (
     <div className="flex h-full">
-      {/* Target list */}
       <div className="w-72 border-r border-surface-200 overflow-y-auto">
         <div className="p-3 border-b border-surface-200">
           <h3 className="text-xs font-semibold text-surface-500">{t('impact.selectObject')}</h3>
         </div>
-        {targets.map(t => {
-          const cfg = TYPE_ICONS[t.type] || TYPE_ICONS.procedure;
-          const Icon = cfg.icon;
+        {targets.map(tItem => {
+          const cfg = TYPE_ICONS[tItem.type] || TYPE_ICONS.procedure;
+          const TIcon = cfg.icon;
           return (
-            <button key={t.id} onClick={() => setSelectedTarget(t.id)}
+            <button key={tItem.id} onClick={() => setSelectedTarget(tItem.id)}
               className={cn('w-full flex items-center justify-between px-4 py-2.5 text-xs hover:bg-surface-100 border-b border-surface-200/50',
-                selectedTarget === t.id && 'bg-brand-50 dark:bg-brand-900/20')}>
+                selectedTarget === tItem.id && 'bg-brand-50 dark:bg-brand-900/20')}>
               <div className="flex items-center gap-2">
-                <Icon className={cn('w-3.5 h-3.5', cfg.color)} />
-                <span className="font-mono truncate">{t.label}</span>
+                <TIcon className={cn('w-3.5 h-3.5', cfg.color)} />
+                <span className="font-mono truncate">{tItem.label}</span>
               </div>
-              <span className="text-[10px] bg-surface-200 text-surface-600 px-1.5 py-0.5 rounded">{t.incomingCount}</span>
+              <span className="text-[10px] bg-surface-200 text-surface-600 px-1.5 py-0.5 rounded">{tItem.incomingCount}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Impact detail */}
       <div className="flex-1 p-6 overflow-y-auto">
         {!selectedTarget ? (
           <div className="flex items-center justify-center h-full text-surface-400">
@@ -669,11 +959,11 @@ function ImpactView({ edges, findNodeLabel, findNodeType }: {
               {impactEdges.map(e => {
                 const sourceType = findNodeType(e.source);
                 const cfg = TYPE_ICONS[sourceType] || TYPE_ICONS.procedure;
-                const Icon = cfg.icon;
+                const EIcon = cfg.icon;
                 const opLabel = e.dependencyType === 'calls' ? 'EXEC' : e.dependencyType === 'reads_from' ? 'READ' : e.dependencyType === 'writes_to' ? 'WRITE' : e.dependencyType;
                 return (
                   <div key={e.id} className={cn('rounded-lg border p-3 flex items-center gap-3', cfg.bg)}>
-                    <Icon className={cn('w-5 h-5', cfg.color)} />
+                    <EIcon className={cn('w-5 h-5', cfg.color)} />
                     <div className="min-w-0">
                       <p className="font-mono text-xs font-medium truncate">{(e as any).sourceLabel || findNodeLabel(e.source)}</p>
                       <p className="text-[10px] text-surface-500">{opLabel} / <span className="cursor-help" title={t('common:tooltips.confidence')}>{t('impact.confidence', { pct: Math.round(e.confidence * 100) })}</span></p>

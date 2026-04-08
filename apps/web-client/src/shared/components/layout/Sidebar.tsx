@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Database, GitBranch, LayoutDashboard, Network, FileText,
+  Database, GitBranch, LayoutDashboard, Network, FileText, Waypoints,
   Shield, Settings, PanelLeftClose, PanelLeft, Code2, Table2, Workflow,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { path: '/graph', icon: Network, labelKey: 'dataLineage', shortcut: 'L' },
   { path: '/explorer', icon: Code2, labelKey: 'sqlExplorer', shortcut: 'E' },
   { path: '/flow', icon: GitBranch, labelKey: 'flowAnalysis', shortcut: 'F' },
+  { path: '/studio', icon: Waypoints, labelKey: 'pipelineStudio', shortcut: 'P' },
   { path: '/tables', icon: Table2, labelKey: 'tables', shortcut: 'T' },
   { path: '/er-diagram', icon: Workflow, labelKey: 'erDiagram', shortcut: 'R' },
   { path: '/security', icon: Shield, labelKey: 'security', shortcut: 'S' },

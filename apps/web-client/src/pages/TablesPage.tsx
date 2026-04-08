@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import {
   Table2, Search, Key, Link2, Hash, ChevronRight,
   Eye, PenTool, Zap, Trash2, Layers,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/utils';
-import { useConnections } from '@/shared/hooks/useConnections';
+import { useGlobalConnection } from '@/shared/hooks/useGlobalConnection';
+import { useStudioContext } from '@/shared/hooks/useStudioContext';
 import { useTables, useTableDetail, type TableItem } from '@/shared/hooks/useTables';
 import { Skeleton } from '@/shared/components/Skeleton';
 
@@ -18,13 +19,20 @@ const OP_ICON: Record<string, { icon: typeof Eye; color: string }> = {
 
 export function TablesPage() {
   const { t } = useTranslation(['tables', 'common']);
-  const { data: connections } = useConnections();
-  const [connectionId, setConnectionId] = useState<string | null>(null);
-  const activeId = connectionId || (connections?.[0] as any)?.id || null;
+  const { connectionId: activeId, setConnectionId, connections } = useGlobalConnection();
 
-  const [search, setSearch] = useState('');
-  const [schemaFilter, setSchemaFilter] = useState('');
-  const [selectedTable, setSelectedTable] = useState<TableItem | null>(null);
+  const [search, setSearch] = useStudioContext('tables', 'search', '');
+  const [schemaFilter, setSchemaFilter] = useStudioContext('tables', 'schemaFilter', '');
+  const [selectedTable, setSelectedTable] = useStudioContext<TableItem | null>('tables', 'selectedTable', null);
+
+  // Reset selection when connection changes
+  const prevConn = useRef(activeId);
+  useEffect(() => {
+    if (prevConn.current !== activeId && prevConn.current !== null) {
+      setSelectedTable(null);
+    }
+    prevConn.current = activeId;
+  }, [activeId, setSelectedTable]);
 
   const { data: tables, isLoading } = useTables(activeId, {
     search: search || undefined,
@@ -44,30 +52,33 @@ export function TablesPage() {
   const schemaColor = (schema: string) => SCHEMA_COLORS[Math.abs([...schema].reduce((a, c) => a + c.charCodeAt(0), 0)) % SCHEMA_COLORS.length];
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <Table2 className="w-5 h-5 text-brand-500" />
-            {t('tables:title')}
-          </h1>
-          <p className="text-surface-500 text-xs mt-0.5">{t('tables:subtitle')}</p>
+    <div className="h-full flex flex-col">
+      {/* Compact toolbar */}
+      <div className="h-10 flex-none flex items-center justify-between px-3 border-b border-surface-200 bg-surface-50/80">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2">
+            <Table2 className="w-4 h-4 text-brand-500 flex-shrink-0" />
+            <span className="text-sm font-semibold truncate">{t('tables:title')}</span>
+          </div>
+          <span className="text-[10px] text-surface-400 tabular-nums hidden sm:inline">
+            {tables?.length || 0} tables
+          </span>
         </div>
         <div className="flex items-center gap-2">
           {connections && (connections as any[]).length > 0 && (
-            <select value={activeId || ''} onChange={(e) => { setConnectionId(e.target.value); setSelectedTable(null); }}
-              className="input w-44 text-xs">
-              {(connections as any[]).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            <select value={activeId || ''} onChange={(e) => setConnectionId(e.target.value || null)}
+              className="input w-44 text-xs h-7">
+              {connections.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           )}
-          <select value={schemaFilter} onChange={(e) => setSchemaFilter(e.target.value)} className="input w-36 text-xs">
+          <select value={schemaFilter} onChange={(e) => setSchemaFilter(e.target.value)} className="input w-36 text-xs h-7">
             <option value="">{t('tables:allSchemas')}</option>
             {schemas.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
       </div>
 
-      <div className="flex-1 flex gap-4 min-h-0 overflow-hidden">
+      <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Table list */}
         <div className="w-72 flex-shrink-0 card flex flex-col overflow-hidden">
           <div className="p-2 border-b border-surface-200/60">

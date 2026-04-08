@@ -9,13 +9,20 @@ from typing import Any
 @dataclass
 class FlowNode:
     node_id: str
-    node_type: str  # start, end, statement, condition, loop, call, return, error_handler
+    node_type: str  # start, end, statement, condition, loop, call, return, error_handler, branch
     label: str
     line_number: int | None = None
     children: list[FlowNode] = field(default_factory=list)
     condition: str | None = None
     true_branch: FlowNode | None = None
     false_branch: FlowNode | None = None
+    expression: str | None = None
+    target_procedure: str | None = None
+    affected_tables: list[str] = field(default_factory=list)
+    variables_read: list[str] = field(default_factory=list)
+    variables_written: list[str] = field(default_factory=list)
+    operation: str | None = None
+    sql_snippet: str | None = None
 
     def is_branching(self) -> bool:
         return self.node_type in ("condition", "loop")
@@ -53,4 +60,11 @@ class FlowNode:
             "children": [c.to_dict() for c in self.children],
             "trueBranch": self.true_branch.to_dict() if self.true_branch else None,
             "falseBranch": self.false_branch.to_dict() if self.false_branch else None,
+            "expression": self.expression,
+            "targetProcedure": self.target_procedure,
+            "affectedTables": self.affected_tables,
+            "variablesRead": self.variables_read,
+            "variablesWritten": self.variables_written,
+            "operation": self.operation,
+            "sqlSnippet": self.sql_snippet,
         }

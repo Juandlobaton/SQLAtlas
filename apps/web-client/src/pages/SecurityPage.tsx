@@ -1,19 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Shield, Search, Loader2, CheckCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/utils';
-import { useConnections } from '@/shared/hooks/useConnections';
+import { useGlobalConnection } from '@/shared/hooks/useGlobalConnection';
+import { useStudioContext } from '@/shared/hooks/useStudioContext';
 import { useProcedures, type ProcedureItem } from '@/shared/hooks/useAnalysis';
 
 const SEVERITY_ORDER = ['critical', 'high', 'medium', 'low', 'info'];
 
 export function SecurityPage() {
   const { t } = useTranslation(['security', 'common']);
-  const { data: connections } = useConnections();
-  const [connectionId, setConnectionId] = useState<string | null>(null);
-  const activeId = connectionId || (connections?.[0] as any)?.id || null;
-  const [search, setSearch] = useState('');
-  const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const { connectionId: activeId, setConnectionId, connections } = useGlobalConnection();
+  const [search, setSearch] = useStudioContext('security', 'search', '');
+  const [severityFilter, setSeverityFilter] = useStudioContext('security', 'severityFilter', 'all');
 
   const { data: procData, isLoading } = useProcedures(activeId, { limit: 100 });
   const procedures = procData?.items || [];
