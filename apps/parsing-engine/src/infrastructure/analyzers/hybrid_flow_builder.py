@@ -1,4 +1,8 @@
-"""Infrastructure: Flow tree builder using regex + SQLGlot AST hybrid."""
+"""Infrastructure: Flow tree builder facade.
+
+Selects the appropriate dialect-specific engine and delegates parsing.
+Implements IFlowBuilder so consumers (container, use cases) need no changes.
+"""
 
 from __future__ import annotations
 
@@ -11,21 +15,44 @@ from sqlglot import exp
 from src.domain.entities.complexity import ComplexityMetrics
 from src.domain.entities.flow_node import FlowNode
 from src.domain.services.flow_builder import IFlowBuilder
+from src.infrastructure.analyzers.flow_builder_plpgsql import PlpgsqlFlowEngine
+from src.infrastructure.analyzers.flow_builder_plsql import PlsqlFlowEngine
+from src.infrastructure.analyzers.flow_builder_tsql import TsqlFlowEngine
 
 logger = logging.getLogger(__name__)
 
+_DIALECT_MAP: dict[str, type] = {
+    "tsql": TsqlFlowEngine,
+    "sqlserver": TsqlFlowEngine,
+    "plsql": PlsqlFlowEngine,
+    "oracle": PlsqlFlowEngine,
+    "plpgsql": PlpgsqlFlowEngine,
+    "postgres": PlpgsqlFlowEngine,
+    "postgresql": PlpgsqlFlowEngine,
+}
+
 
 class HybridFlowBuilder(IFlowBuilder):
-    def build_flow_tree(self, sql: str, dialect: str) -> FlowNode:  # noqa: ARG002
+    """Factory/facade: selects dialect engine, delegates parsing."""
+
+    def build_flow_tree(self, sql: str, dialect: str) -> FlowNode:
+        try:
+            engine_cls = _DIALECT_MAP.get(dialect.lower(), TsqlFlowEngine)
+            engine = engine_cls(sql)
+            return engine.parse()
+        except Exception as e:
+            logger.warning(f"Flow builder failed, using fallback: {e}")
+            return self._build_flat_fallback(sql)
+
+    def _build_flat_fallback(self, sql: str) -> FlowNode:
+        """Original flat algorithm as fallback."""
         root = FlowNode(node_id="start", node_type="start", label="Start", line_number=1)
         counter = 0
-
         lines = sql.split("\n")
         for i, line in enumerate(lines, 1):
             stripped = line.strip().upper()
             if not stripped or stripped.startswith(("--", "/*")):
                 continue
-
             node_type = self._classify_line(stripped)
             if node_type:
                 counter += 1
@@ -35,9 +62,8 @@ class HybridFlowBuilder(IFlowBuilder):
                     label=line.strip()[:80],
                     line_number=i,
                 ))
-
         root.children.append(FlowNode(
-            node_id="end", node_type="end", label="End", line_number=len(lines)
+            node_id="end", node_type="end", label="End", line_number=len(lines),
         ))
         return root
 
@@ -82,12 +108,13 @@ class HybridFlowBuilder(IFlowBuilder):
             line_count=line_count,
         )
 
-    def _classify_line(self, stripped: str) -> str | None:
+    @staticmethod
+    def _classify_line(stripped: str) -> str | None:
         if re.match(r"\bIF\b", stripped):
             return "condition"
         if re.match(r"\b(WHILE|LOOP|FOR)\b", stripped):
             return "loop"
-        if re.match(r"\b(EXEC|EXECUTE|CALL)\b", stripped):
+        if re.match(r"\b(EXEC|EXECUTE|CALL|PERFORM)\b", stripped):
             return "call"
         if re.match(r"\b(INSERT|UPDATE|DELETE|MERGE|SELECT\s+INTO)\b", stripped):
             return "statement"

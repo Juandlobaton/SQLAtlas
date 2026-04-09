@@ -56,5 +56,38 @@
     "searchPlaceholder": "Pesquisar procedimento...",
     "noResults": "Nenhum procedimento encontrado",
     "lines": "linhas"
+  },
+  "stepTypes": {
+    "setup": "Preparação",
+    "query": "Consulta",
+    "modify": "Modificação",
+    "call": "Chamada",
+    "decision": "Decisão",
+    "loop": "Iteração",
+    "protection": "Proteção",
+    "error": "Erro",
+    "result": "Resultado",
+    "transaction": "Transação",
+    "operation": "Operação"
+  },
+  "stepLabels": {
+    "condition": "Condição",
+    "whenTrue": "SE verdadeiro",
+    "whenFalse": "SE falso",
+    "eachIteration": "Cada iteração",
+    "protectedOps": "Operações protegidas",
+    "onError": "Em caso de erro",
+    "processTitle": "Processo de Execução",
+    "processHint": "Documentação passo a passo do processo com referências ao código SQL fonte.",
+    "lines": "L{{start}}–L{{end}}",
+    "linesSingle": "L{{line}}",
+    "showMore": "Ver mais",
+    "showLess": "Ver menos"
+  },
+  "commentLang": {
+    "label": "Comentários",
+    "en": "Inglês",
+    "es": "Espanhol",
+    "pt": "Português"
   }
 }

@@ -7,6 +7,7 @@ export class DbConnection {
     public readonly id: string,
     public readonly tenantId: string,
     public readonly name: string,
+    public readonly slug: string,
     public readonly engine: DbEngine,
     public readonly host: string,
     public readonly port: number,

@@ -111,7 +111,9 @@
     "orgPlaceholder": "Mi Empresa",
     "orgSlug": "Slug de Organización",
     "orgSlugPlaceholder": "mi-empresa",
-    "registrationClosed": "El registro está deshabilitado. Contacta a tu administrador."
+    "registrationClosed": "El registro está deshabilitado. Contacta a tu administrador.",
+    "orContinueWith": "o",
+    "signInMicrosoft": "Iniciar sesión con Microsoft"
   },
   "setup": {
     "title": "Configuración Inicial",

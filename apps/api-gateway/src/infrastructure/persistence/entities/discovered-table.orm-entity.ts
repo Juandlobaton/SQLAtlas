@@ -30,6 +30,10 @@ export class DiscoveredTableOrmEntity {
   @Column({ name: 'table_name', length: 255 })
   tableName!: string;
 
+  @Column({ length: 500 })
+  @Index()
+  slug!: string;
+
   @Column({ name: 'full_qualified_name', length: 1000 })
   @Index()
   fullQualifiedName!: string;

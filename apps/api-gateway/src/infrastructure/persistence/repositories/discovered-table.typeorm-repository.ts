@@ -7,6 +7,7 @@ import {
   TableFilter,
 } from '../../../domain/repositories/discovered-table.repository';
 import { DiscoveredTableOrmEntity } from '../entities/discovered-table.orm-entity';
+import { slugify } from '../../../shared/utils/slugify';
 import { TableAccessOrmEntity } from '../entities/table-access.orm-entity';
 
 @Injectable()
@@ -85,6 +86,7 @@ export class DiscoveredTableTypeOrmRepository implements IDiscoveredTableReposit
       schemaId: data.schemaId,
       schemaName: data.schemaName,
       tableName: data.tableName,
+      slug: data.slug || slugify(data.fullQualifiedName),
       fullQualifiedName: data.fullQualifiedName,
       tableType: data.tableType,
       estimatedRowCount: data.estimatedRowCount,
@@ -115,7 +117,7 @@ export class DiscoveredTableTypeOrmRepository implements IDiscoveredTableReposit
   private toDomain(e: DiscoveredTableOrmEntity): DiscoveredTable {
     return new DiscoveredTable(
       e.id, e.tenantId, e.connectionId, e.schemaId, e.schemaName,
-      e.tableName, e.fullQualifiedName, e.tableType as TableType,
+      e.tableName, e.slug, e.fullQualifiedName, e.tableType as TableType,
       e.estimatedRowCount, e.sizeBytes, e.columns as any, e.primaryKey,
       e.foreignKeys as any, e.indexes as any, e.referencedByCount,
       e.firstSeenAt, e.lastSeenAt, e.isDeleted, e.createdAt, e.updatedAt,

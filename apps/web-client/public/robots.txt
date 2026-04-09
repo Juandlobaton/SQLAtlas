@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sqlatlas.netlify.app/sitemap.xml

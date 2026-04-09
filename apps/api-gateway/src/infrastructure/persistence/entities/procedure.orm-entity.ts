@@ -36,6 +36,10 @@ export class ProcedureOrmEntity {
   @Column({ name: 'object_name', length: 255 })
   objectName!: string;
 
+  @Column({ length: 500 })
+  @Index()
+  slug!: string;
+
   @Column({ name: 'full_qualified_name', length: 1000 })
   @Index()
   fullQualifiedName!: string;
@@ -67,6 +71,9 @@ export class ProcedureOrmEntity {
 
   @Column({ name: 'auto_doc', type: 'jsonb', nullable: true })
   autoDoc!: Record<string, unknown> | null;
+
+  @Column({ name: 'flow_tree', type: 'jsonb', nullable: true })
+  flowTree!: Record<string, unknown> | null;
 
   @Column({ name: 'security_findings', type: 'jsonb', default: '[]' })
   securityFindings!: Record<string, unknown>[];

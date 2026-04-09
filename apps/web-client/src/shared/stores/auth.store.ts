@@ -5,6 +5,7 @@ interface SystemStatus {
   needsSetup: boolean;
   registrationMode: 'closed' | 'invite-only' | 'open';
   multiTenant: boolean;
+  microsoftSso: boolean;
 }
 
 interface AuthUser {
@@ -23,6 +24,7 @@ interface AuthState {
   login: (email: string, password: string, tenantSlug?: string) => Promise<void>;
   register: (email: string, password: string, displayName: string, tenantName: string) => Promise<void>;
   setup: (email: string, password: string, displayName: string, orgName: string) => Promise<void>;
+  handleSsoCallback: (accessToken: string) => void;
   fetchSystemStatus: () => Promise<SystemStatus>;
   logout: () => Promise<void>;
   restoreSession: () => void;
@@ -109,6 +111,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
+  handleSsoCallback: (accessToken: string) => {
+    const user = decodeJwt(accessToken);
+    if (user) {
+      localStorage.setItem('session_user', JSON.stringify(user));
+    }
+    set({ user, isAuthenticated: !!user, isLoading: false, error: null });
+  },
+
   logout: async () => {
     try {
       await api.post('/auth/logout');
@@ -116,6 +126,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Best-effort — cookies cleared server-side
     }
     localStorage.removeItem('session_user');
+    localStorage.removeItem('sqlatlas-studio');
     set({ user: null, isAuthenticated: false });
   },
 

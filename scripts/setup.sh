@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────
 # SQLAtlas — First-time setup script (Linux / macOS)
-# Checks dependencies, generates secrets, creates .env, and starts services.
-# Usage: ./scripts/setup.sh
+# Checks dependencies, validates ports, generates secrets, creates
+# .env files, installs packages, starts infrastructure, and
+# optionally launches all 3 services.
+#
+# Usage:
+#   ./scripts/setup.sh            # Setup infra only (postgres + redis)
+#   ./scripts/setup.sh --full     # Setup + install deps + start all services
+#   ./scripts/setup.sh --check    # Validate only, don't change anything
 # ─────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -10,78 +16,204 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
+BOLD='\033[1m'
 NC='\033[0m'
 
 info()  { printf "${CYAN}[INFO]${NC}  %s\n" "$1"; }
-ok()    { printf "${GREEN}[OK]${NC}    %s\n" "$1"; }
+ok()    { printf "${GREEN}[ OK ]${NC}  %s\n" "$1"; }
 warn()  { printf "${YELLOW}[WARN]${NC}  %s\n" "$1"; }
 fail()  { printf "${RED}[FAIL]${NC}  %s\n" "$1"; exit 1; }
+step()  { printf "\n${BOLD}── %s ──${NC}\n" "$1"; }
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DOCKER_DIR="$ROOT_DIR/docker"
 ENV_FILE="$DOCKER_DIR/.env"
+API_DIR="$ROOT_DIR/apps/api-gateway"
+PARSER_DIR="$ROOT_DIR/apps/parsing-engine"
+WEB_DIR="$ROOT_DIR/apps/web-client"
+
+# Parse flags
+MODE="setup"       # setup | full | check
+for arg in "$@"; do
+  case "$arg" in
+    --full)  MODE="full" ;;
+    --check) MODE="check" ;;
+  esac
+done
+
+ERRORS=0
+WARNINGS=0
 
 # ─── 1. Check dependencies ──────────────────────────────────────
-info "Checking dependencies..."
+step "1/6  Checking dependencies"
 
 check_cmd() {
   if command -v "$1" &>/dev/null; then
     ok "$1 found: $(command -v "$1")"
     return 0
   else
+    warn "$1 not found"
     return 1
   fi
 }
 
-MISSING=()
+check_version() {
+  local name="$1" actual="$2" required_major="$3" required_minor="${4:-0}"
+  local actual_major actual_minor
+  actual_major=$(echo "$actual" | cut -d. -f1)
+  actual_minor=$(echo "$actual" | cut -d. -f2)
+  if [ "$actual_major" -gt "$required_major" ] || { [ "$actual_major" -eq "$required_major" ] && [ "$actual_minor" -ge "$required_minor" ]; }; then
+    ok "$name $actual (>= $required_major.$required_minor required)"
+    return 0
+  else
+    warn "$name $actual found, but >= $required_major.$required_minor required"
+    return 1
+  fi
+}
 
-if ! check_cmd docker; then MISSING+=("docker"); fi
-if ! docker compose version &>/dev/null 2>&1 && ! check_cmd docker-compose; then
-  MISSING+=("docker-compose")
+# Docker (required)
+HAS_DOCKER=false
+if check_cmd docker; then
+  HAS_DOCKER=true
+  if docker compose version &>/dev/null 2>&1; then
+    ok "docker compose plugin available"
+  elif check_cmd docker-compose; then
+    ok "docker-compose standalone available"
+  else
+    warn "Neither 'docker compose' nor 'docker-compose' found"
+    ((ERRORS++))
+  fi
 fi
+if [ "$HAS_DOCKER" = false ]; then ((ERRORS++)); fi
 
-# Node/pnpm only needed for local dev (not Docker-only)
+# Node.js
 HAS_NODE=false
 if check_cmd node; then
   NODE_VER=$(node -v | sed 's/v//')
-  NODE_MAJOR=$(echo "$NODE_VER" | cut -d. -f1)
-  if [ "$NODE_MAJOR" -ge 20 ]; then
-    ok "Node.js $NODE_VER (>= 20 required)"
+  if check_version "Node.js" "$NODE_VER" 20; then
     HAS_NODE=true
   else
-    warn "Node.js $NODE_VER found, but >= 20.0.0 required for local dev"
+    ((WARNINGS++))
   fi
+else
+  ((WARNINGS++))
 fi
 
+# pnpm
 HAS_PNPM=false
 if check_cmd pnpm; then
   HAS_PNPM=true
+else
+  if [ "$HAS_NODE" = true ]; then
+    warn "pnpm not found — install with: npm install -g pnpm@9"
+  fi
+  ((WARNINGS++))
 fi
 
+# Python
 HAS_PYTHON=false
 if check_cmd python3; then
   PY_VER=$(python3 --version | awk '{print $2}')
-  PY_MAJOR=$(echo "$PY_VER" | cut -d. -f1)
-  PY_MINOR=$(echo "$PY_VER" | cut -d. -f2)
-  if [ "$PY_MAJOR" -ge 3 ] && [ "$PY_MINOR" -ge 11 ]; then
-    ok "Python $PY_VER (>= 3.11 required)"
+  if check_version "Python" "$PY_VER" 3 11; then
     HAS_PYTHON=true
   else
-    warn "Python $PY_VER found, but >= 3.11 required for local dev"
+    ((WARNINGS++))
   fi
+elif check_cmd python; then
+  PY_VER=$(python --version | awk '{print $2}')
+  PY_MAJOR=$(echo "$PY_VER" | cut -d. -f1)
+  if [ "$PY_MAJOR" -ge 3 ]; then
+    if check_version "Python" "$PY_VER" 3 11; then
+      HAS_PYTHON=true
+    else
+      ((WARNINGS++))
+    fi
+  fi
+else
+  ((WARNINGS++))
 fi
 
-if [ ${#MISSING[@]} -gt 0 ]; then
-  fail "Missing required dependencies: ${MISSING[*]}\nInstall them and re-run this script."
+# uv (Python package manager)
+HAS_UV=false
+if check_cmd uv; then
+  HAS_UV=true
+else
+  if [ "$HAS_PYTHON" = true ]; then
+    warn "uv not found — install with: curl -LsSf https://astral.sh/uv/install.sh | sh"
+  fi
+  ((WARNINGS++))
 fi
 
+# Summary
 echo ""
+if [ "$ERRORS" -gt 0 ]; then
+  fail "Found $ERRORS critical error(s). Fix them and re-run."
+fi
+if [ "$WARNINGS" -gt 0 ]; then
+  warn "$WARNINGS optional dependency warnings (needed for local dev, not Docker)"
+fi
 
-# ─── 2. Generate .env file ──────────────────────────────────────
+if [ "$MODE" = "check" ]; then
+  step "Validation complete"
+  echo "  Errors:   $ERRORS"
+  echo "  Warnings: $WARNINGS"
+  exit 0
+fi
+
+# ─── 2. Validate ports ──────────────────────────────────────────
+step "2/6  Checking ports"
+
+check_port() {
+  local port="$1" name="$2"
+  if lsof -i :"$port" -sTCP:LISTEN &>/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ":$port "; then
+    warn "Port $port ($name) is already in use"
+    if lsof -i :"$port" -sTCP:LISTEN 2>/dev/null | head -2; then true; fi
+    return 1
+  else
+    ok "Port $port ($name) is available"
+    return 0
+  fi
+}
+
+PORT_OK=true
+check_port 5433  "PostgreSQL"   || PORT_OK=false
+check_port 6380  "Redis"        || PORT_OK=false
+check_port 3000  "API Gateway"  || PORT_OK=false
+check_port 8100  "Parser"       || PORT_OK=false
+check_port 5173  "Web Client"   || PORT_OK=false
+
+if [ "$PORT_OK" = false ]; then
+  warn "Some ports are in use. Services on those ports may fail to start."
+  echo "  Tip: stop conflicting services or change ports in docker/.env"
+fi
+
+# ─── 3. Generate .env files ─────────────────────────────────────
+step "3/6  Environment configuration"
+
 if [ -f "$ENV_FILE" ]; then
   warn ".env already exists at $ENV_FILE"
-  read -rp "  Overwrite? (y/N): " OVERWRITE
+
+  # Check for missing vars compared to example
+  if [ -f "$DOCKER_DIR/.env.example" ]; then
+    MISSING_VARS=()
+    while IFS= read -r line; do
+      [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+      KEY="${line%%=*}"
+      if ! grep -q "^${KEY}=" "$ENV_FILE" 2>/dev/null; then
+        MISSING_VARS+=("$KEY")
+      fi
+    done < "$DOCKER_DIR/.env.example"
+
+    if [ ${#MISSING_VARS[@]} -gt 0 ]; then
+      warn "Missing vars in .env (present in .env.example):"
+      for v in "${MISSING_VARS[@]}"; do echo "    - $v"; done
+    else
+      ok "All expected vars present in .env"
+    fi
+  fi
+
+  read -rp "  Overwrite .env? (y/N): " OVERWRITE
   if [[ ! "$OVERWRITE" =~ ^[Yy]$ ]]; then
     info "Keeping existing .env"
   else
@@ -92,12 +224,10 @@ fi
 if [ ! -f "$ENV_FILE" ]; then
   info "Generating secrets and .env file..."
 
-  # Generate secure random values
   DB_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)
   JWT_SECRET=$(openssl rand -base64 48)
   ENCRYPTION_KEY=$(openssl rand -hex 32)
 
-  # Ask for admin credentials (optional)
   echo ""
   info "Optional: Pre-configure admin account (skip with Enter for web wizard)"
   read -rp "  Admin email (leave empty to skip): " ADMIN_EMAIL
@@ -109,9 +239,7 @@ if [ ! -f "$ENV_FILE" ]; then
     while true; do
       read -rsp "  Admin password (min 8 chars, upper+lower+number+special): " ADMIN_PASSWORD
       echo ""
-      if [ ${#ADMIN_PASSWORD} -ge 8 ]; then
-        break
-      fi
+      if [ ${#ADMIN_PASSWORD} -ge 8 ]; then break; fi
       warn "Password too short, try again"
     done
     read -rp "  Display name [Admin]: " ADMIN_DISPLAY_NAME
@@ -158,14 +286,12 @@ EOF
   fi
 
   ok ".env created at $ENV_FILE"
-  echo ""
 fi
 
-# ─── 3. Create api-gateway .env for local dev ───────────────────
-API_ENV="$ROOT_DIR/apps/api-gateway/.env"
+# Create api-gateway .env for local dev
+API_ENV="$API_DIR/.env"
 if [ ! -f "$API_ENV" ] && [ "$HAS_NODE" = true ]; then
   info "Creating api-gateway .env for local development..."
-  # Source the docker .env to reuse the same secrets
   # shellcheck disable=SC1090
   source "$ENV_FILE"
   cat > "$API_ENV" <<EOF
@@ -198,13 +324,45 @@ ADMIN_DISPLAY_NAME=${ADMIN_DISPLAY_NAME:-Admin}
 ORG_NAME=${ORG_NAME:-My Organization}
 EOF
   fi
-
   ok "api-gateway .env created"
 fi
 
-# ─── 4. Start services ──────────────────────────────────────────
-echo ""
-info "Starting Docker services..."
+# ─── 4. Install dependencies ────────────────────────────────────
+step "4/6  Installing dependencies"
+
+if [ "$HAS_PNPM" = true ]; then
+  info "Installing Node.js dependencies (pnpm install)..."
+  cd "$ROOT_DIR"
+  pnpm install --frozen-lockfile 2>&1 | tail -3
+  ok "Node.js dependencies installed"
+else
+  warn "Skipping Node.js deps (pnpm not available)"
+fi
+
+if [ "$HAS_UV" = true ]; then
+  info "Installing Python dependencies (uv sync)..."
+  cd "$PARSER_DIR"
+  uv sync 2>&1 | tail -3
+  ok "Python dependencies installed"
+elif [ "$HAS_PYTHON" = true ]; then
+  warn "uv not found — trying pip fallback..."
+  cd "$PARSER_DIR"
+  if [ -d ".venv" ]; then
+    source .venv/bin/activate 2>/dev/null || true
+  else
+    python3 -m venv .venv
+    source .venv/bin/activate
+  fi
+  pip install -q -e "." 2>&1 | tail -3
+  ok "Python dependencies installed (pip)"
+else
+  warn "Skipping Python deps (no Python >= 3.11)"
+fi
+
+cd "$ROOT_DIR"
+
+# ─── 5. Start infrastructure ────────────────────────────────────
+step "5/6  Starting infrastructure (PostgreSQL + Redis)"
 
 cd "$DOCKER_DIR"
 
@@ -214,32 +372,89 @@ else
   COMPOSE="docker-compose"
 fi
 
-$COMPOSE --env-file "$ENV_FILE" up -d postgres redis
+$COMPOSE --env-file "$ENV_FILE" up -d postgres redis 2>&1 | tail -3
 
-info "Waiting for PostgreSQL to be ready..."
+info "Waiting for PostgreSQL..."
 for i in $(seq 1 30); do
   if $COMPOSE exec -T postgres pg_isready -U "${POSTGRES_USER:-sqlatlas}" &>/dev/null; then
-    ok "PostgreSQL is ready"
+    ok "PostgreSQL is ready (localhost:${DB_PORT:-5433})"
     break
   fi
-  if [ "$i" -eq 30 ]; then fail "PostgreSQL did not start in time"; fi
+  if [ "$i" -eq 30 ]; then fail "PostgreSQL did not start in 30s"; fi
   sleep 1
 done
 
-info "Waiting for Redis to be ready..."
+info "Waiting for Redis..."
 for i in $(seq 1 15); do
   if $COMPOSE exec -T redis redis-cli ping 2>/dev/null | grep -q PONG; then
-    ok "Redis is ready"
+    ok "Redis is ready (localhost:${REDIS_PORT:-6380})"
     break
   fi
-  if [ "$i" -eq 15 ]; then fail "Redis did not start in time"; fi
+  if [ "$i" -eq 15 ]; then fail "Redis did not start in 15s"; fi
   sleep 1
 done
 
-# ─── 5. Summary ─────────────────────────────────────────────────
+cd "$ROOT_DIR"
+
+# ─── 6. Full mode: start all services ───────────────────────────
+if [ "$MODE" = "full" ]; then
+  step "6/6  Starting all services"
+
+  if [ "$HAS_UV" = true ] || [ "$HAS_PYTHON" = true ]; then
+    info "Starting Parsing Engine (port 8100)..."
+    cd "$PARSER_DIR"
+    if [ "$HAS_UV" = true ]; then
+      uv run uvicorn src.main:app --host 0.0.0.0 --port 8100 &
+    else
+      source .venv/bin/activate 2>/dev/null
+      uvicorn src.main:app --host 0.0.0.0 --port 8100 &
+    fi
+    PARSER_PID=$!
+    cd "$ROOT_DIR"
+
+    # Wait for parser health
+    for i in $(seq 1 20); do
+      if curl -sf http://localhost:8100/health &>/dev/null; then
+        ok "Parsing Engine is healthy (PID: $PARSER_PID)"
+        break
+      fi
+      if [ "$i" -eq 20 ]; then warn "Parser health check timed out (may still be starting)"; fi
+      sleep 1
+    done
+  fi
+
+  if [ "$HAS_PNPM" = true ]; then
+    info "Starting API Gateway (port 3000)..."
+    cd "$API_DIR"
+    pnpm dev &
+    API_PID=$!
+    cd "$ROOT_DIR"
+
+    # Wait for API health
+    sleep 3
+    for i in $(seq 1 20); do
+      if curl -sf http://localhost:3000/health &>/dev/null; then
+        ok "API Gateway is healthy (PID: $API_PID)"
+        break
+      fi
+      if [ "$i" -eq 20 ]; then warn "API health check timed out (may still be starting)"; fi
+      sleep 1
+    done
+
+    info "Starting Web Client (port 5173)..."
+    cd "$WEB_DIR"
+    pnpm dev &
+    WEB_PID=$!
+    cd "$ROOT_DIR"
+    sleep 2
+    ok "Web Client started (PID: $WEB_PID)"
+  fi
+fi
+
+# ─── Summary ────────────────────────────────────────────────────
 echo ""
 echo "═══════════════════════════════════════════════════════════════"
-printf "${GREEN} SQLAtlas setup complete!${NC}\n"
+printf "${GREEN}${BOLD} SQLAtlas setup complete!${NC}\n"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 echo "  Infrastructure:"
@@ -247,27 +462,40 @@ echo "    PostgreSQL : localhost:${DB_PORT:-5433}"
 echo "    Redis      : localhost:${REDIS_PORT:-6380}"
 echo ""
 
-if [ "$HAS_NODE" = true ] && [ "$HAS_PNPM" = true ]; then
-  echo "  Next steps (local development):"
-  echo "    1. pnpm install"
-  echo "    2. cd apps/parsing-engine && uv sync && cd ../.."
-  echo "    3. Terminal 1: cd apps/parsing-engine && uv run uvicorn src.main:app --port 8100 --reload"
-  echo "    4. Terminal 2: cd apps/api-gateway && pnpm dev"
-  echo "    5. Terminal 3: cd apps/web-client && pnpm dev"
-  echo "    6. Open http://localhost:5173"
+if [ "$MODE" = "full" ]; then
+  echo "  Services (running in background):"
+  echo "    Parsing Engine : http://localhost:8100  (PID: ${PARSER_PID:-N/A})"
+  echo "    API Gateway    : http://localhost:3000  (PID: ${API_PID:-N/A})"
+  echo "    Web Client     : http://localhost:5173  (PID: ${WEB_PID:-N/A})"
+  echo ""
+  echo "  Open: ${BOLD}http://localhost:5173${NC}"
+  echo "  Stop: kill ${PARSER_PID:-} ${API_PID:-} ${WEB_PID:-}"
 else
-  echo "  Next steps (Docker only):"
-  echo "    1. cd docker && $COMPOSE --env-file .env up -d"
-  echo "    2. Open http://localhost:3000"
+  if [ "$HAS_NODE" = true ] && [ "$HAS_PNPM" = true ]; then
+    echo "  Quick start (3 terminals):"
+    echo "    T1: cd apps/parsing-engine && uv run uvicorn src.main:app --port 8100 --reload"
+    echo "    T2: cd apps/api-gateway && pnpm dev"
+    echo "    T3: cd apps/web-client && pnpm dev"
+    echo ""
+    echo "  Or run everything at once:"
+    echo "    ./scripts/setup.sh --full"
+  else
+    echo "  Docker-only mode:"
+    echo "    cd docker && $COMPOSE --env-file .env up -d"
+    echo "    Open http://localhost:3000"
+  fi
 fi
 
 echo ""
 if [ -n "${ADMIN_EMAIL:-}" ]; then
-  echo "  Admin account: ${ADMIN_EMAIL} (created on first API boot)"
+  echo "  Admin: ${ADMIN_EMAIL} (auto-created on first API boot)"
 else
-  echo "  First visit: http://localhost:5173/setup (or :3000 in Docker)"
-  echo "  The setup wizard will create your admin account."
+  echo "  First visit: http://localhost:5173/setup"
 fi
+echo "  Swagger: http://localhost:3000/docs (dev mode)"
 echo ""
-echo "  Docs:   http://localhost:3000/docs (Swagger, dev mode only)"
-echo ""
+
+if [ "$MODE" = "full" ]; then
+  info "Press Ctrl+C to stop all services"
+  wait
+fi

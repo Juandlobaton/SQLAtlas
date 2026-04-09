@@ -56,8 +56,11 @@ class SqlGlotPlPgSqlParser(SqlGlotBaseParser):
         complexity = self._analyze_complexity(stmt, full_sql)
         return_type = self._extract_return_type(full_sql)
 
+        flow_tree = self._build_flow_tree(full_sql) if obj_type != ObjectType.VIEW else None
+
         auto_doc = self._generate_auto_doc(
-            object_name, params, table_refs, deps, complexity, return_type
+            object_name, params, table_refs, deps, complexity, return_type,
+            raw_sql=full_sql, flow_tree=flow_tree,
         )
 
         return ParseResult(
@@ -73,7 +76,7 @@ class SqlGlotPlPgSqlParser(SqlGlotBaseParser):
             dependencies=deps,
             table_references=table_refs,
             security_findings=security,
-            flow_tree=self._build_flow_tree(full_sql) if obj_type != ObjectType.VIEW else None,
+            flow_tree=flow_tree,
             line_count=full_sql.count("\n") + 1,
             complexity=complexity,
             auto_doc=auto_doc,

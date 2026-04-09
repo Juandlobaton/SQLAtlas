@@ -28,6 +28,7 @@ export interface SystemStatusOutput {
   needsSetup: boolean;
   registrationMode: 'closed' | 'invite-only' | 'open';
   multiTenant: boolean;
+  microsoftSso: boolean;
 }
 
 export interface JwtPayload {

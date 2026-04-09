@@ -24,7 +24,9 @@
     "fix": "Correção: {{recommendation}}",
     "sourceCode": "Código Fonte",
     "openInExplorer": "Abrir no Explorador SQL",
-    "openInFlow": "Ver em Análise de Fluxo"
+    "openInFlow": "Ver em Análise de Fluxo",
+    "depsCount_one": "{{count}} dependência",
+    "depsCount_other": "{{count}} dependências"
   },
   "lineageView": {
     "selectToViewLineage": "Selecione um procedimento para ver a linhagem",
@@ -32,9 +34,11 @@
     "upstream": "Chamadores (upstream)",
     "noCallers": "Nenhum chamador encontrado",
     "selected": "Selecionado",
-    "executionFlow": "Fluxo de Execução",
     "downstream": "Chamados (downstream)",
-    "noDeps": "Nenhuma dependência encontrada"
+    "noDeps": "Nenhuma dependência encontrada",
+    "searchProcedures": "Filtrar procedimentos...",
+    "calledProcedures": "Procedimentos Chamados",
+    "tableOperations": "Operações em Tabelas"
   },
   "matrix": {
     "procedureFunction": "Procedimento / Função",
@@ -53,6 +57,10 @@
     "deps_one": "{{count}} dependência",
     "deps_other": "{{count}} dependências",
     "description": "Os seguintes procedimentos/funções dependem deste objeto:",
-    "confidence": "confiança {{pct}}%"
+    "confidence": "confiança {{pct}}%",
+    "searchObjects": "Filtrar objetos...",
+    "filterAll": "Todos",
+    "incomingDeps": "Dependem deste objeto",
+    "outgoingDeps": "Este objeto depende de"
   }
 }

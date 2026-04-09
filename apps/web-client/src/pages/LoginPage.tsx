@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Database, LogIn, UserPlus } from 'lucide-react';
 import { useAuthStore } from '@/shared/stores/auth.store';
+
+const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 
 export function LoginPage() {
   const { t } = useTranslation(['login', 'common']);
   const navigate = useNavigate();
-  const { login, register, fetchSystemStatus, systemStatus, isLoading, error } = useAuthStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { login, register, handleSsoCallback, fetchSystemStatus, systemStatus, isLoading, error } = useAuthStore();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -15,6 +18,25 @@ export function LoginPage() {
   const [tenantSlug, setTenantSlug] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [tenantName, setTenantName] = useState('');
+  const [ssoError, setSsoError] = useState<string | null>(null);
+
+  // Handle SSO callback parameters
+  useEffect(() => {
+    const ssoStatus = searchParams.get('sso');
+    const token = searchParams.get('token');
+    const errorMsg = searchParams.get('error');
+
+    if (ssoStatus === 'success' && token) {
+      handleSsoCallback(token);
+      setSearchParams({}, { replace: true });
+      navigate('/', { replace: true });
+      return;
+    }
+    if (errorMsg) {
+      setSsoError(decodeURIComponent(errorMsg));
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, handleSsoCallback, navigate]);
 
   useEffect(() => {
     if (import.meta.env.VITE_DEMO_MODE === 'true') {
@@ -81,9 +103,9 @@ export function LoginPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="card p-6 space-y-4">
-          {error && (
+          {(error || ssoError) && (
             <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
-              {error}
+              {error || ssoError}
             </div>
           )}
 
@@ -120,6 +142,23 @@ export function LoginPage() {
           <button type="submit" disabled={isLoading} className="btn-primary w-full">
             {isLoading ? t('common:loading') : mode === 'login' ? t('common:auth.signIn') : t('common:auth.createAccount')}
           </button>
+
+          {/* Microsoft SSO */}
+          {systemStatus?.microsoftSso && mode === 'login' && (
+            <>
+              <div className="relative my-2">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-surface-200" /></div>
+                <div className="relative flex justify-center text-xs"><span className="bg-white dark:bg-surface-50 px-2 text-surface-400">{t('common:auth.orContinueWith', { defaultValue: 'or' })}</span></div>
+              </div>
+              <a
+                href={`${API_BASE}/auth/microsoft${showTenantSlug && tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : ''}`}
+                className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors text-sm font-medium text-surface-700 dark:text-surface-200"
+              >
+                <svg width="18" height="18" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+                {t('common:auth.signInMicrosoft', { defaultValue: 'Sign in with Microsoft' })}
+              </a>
+            </>
+          )}
         </form>
       </div>
     </div>

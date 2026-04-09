@@ -2,6 +2,23 @@ const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 const PARSER_BASE = import.meta.env.VITE_PARSER_BASE || '/parse';
 const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true';
 
+// Prevent concurrent refresh requests
+let refreshPromise: Promise<boolean> | null = null;
+
+async function tryRefreshToken(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = fetch(`${API_BASE}/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+    .then((res) => res.ok)
+    .catch(() => false)
+    .finally(() => { refreshPromise = null; });
+
+  return refreshPromise;
+}
+
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   signal?: AbortSignal;
@@ -26,7 +43,7 @@ async function request<T>(base: string, path: string, options: RequestOptions = 
     ...extraHeaders as Record<string, string>,
   };
 
-  const response = await fetch(`${base}${path}`, {
+  let response = await fetch(`${base}${path}`, {
     ...rest,
     headers,
     body: body ? JSON.stringify(body) : undefined,
@@ -34,8 +51,22 @@ async function request<T>(base: string, path: string, options: RequestOptions = 
     credentials: 'include',
   });
 
-  // Auto-logout on expired/invalid token
-  if (response.status === 401 && !IS_DEMO) {
+  // On 401, attempt to refresh the access token and retry once
+  if (response.status === 401 && !IS_DEMO && !path.includes('/auth/')) {
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      response = await fetch(`${base}${path}`, {
+        ...rest,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal,
+        credentials: 'include',
+      });
+    }
+  }
+
+  // If still 401 after refresh attempt, logout (skip for auth endpoints — they handle their own errors)
+  if (response.status === 401 && !IS_DEMO && !path.includes('/auth/')) {
     fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
     window.location.href = '/login';
     throw new Error('Session expired');

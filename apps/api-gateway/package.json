@@ -13,12 +13,14 @@
     "test:watch": "jest --watch",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:cov": "jest --coverage",
-    "db:migrate": "typeorm migration:run -d dist/infrastructure/persistence/data-source.js",
-    "db:migrate:generate": "typeorm migration:generate -d dist/infrastructure/persistence/data-source.js",
+    "db:migrate": "npx ts-node --project tsconfig.json ./node_modules/typeorm/cli.js migration:run -d src/infrastructure/persistence/data-source.ts",
+    "db:migrate:revert": "npx ts-node --project tsconfig.json ./node_modules/typeorm/cli.js migration:revert -d src/infrastructure/persistence/data-source.ts",
+    "db:migrate:generate": "npx ts-node --project tsconfig.json ./node_modules/typeorm/cli.js migration:generate -d src/infrastructure/persistence/data-source.ts",
     "db:seed": "ts-node src/infrastructure/persistence/seeds/run.ts",
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@azure/msal-node": "^5.1.2",
     "@nestjs/cache-manager": "^2.0.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",

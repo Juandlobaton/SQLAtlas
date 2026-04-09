@@ -21,6 +21,10 @@ export class DbConnectionOrmEntity {
   @Column({ length: 255 })
   name!: string;
 
+  @Column({ length: 300 })
+  @Index()
+  slug!: string;
+
   @Column({ length: 50 })
   engine!: string;
 

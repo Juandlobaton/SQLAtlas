@@ -19,7 +19,7 @@ export function SettingsPage() {
       .then((r) => { setParserStatus(r.status === 'healthy' ? 'healthy' : 'down'); })
       .catch(() => setParserStatus('down'));
 
-    fetch('/api/v1/health').then((r) => r.ok ? setApiStatus('healthy') : setApiStatus('down')).catch(() => setApiStatus('down'));
+    fetch('/health').then((r) => r.ok ? setApiStatus('healthy') : setApiStatus('down')).catch(() => setApiStatus('down'));
 
     parserApi.dialects()
       .then((r) => setDialects(r.dialects || []))

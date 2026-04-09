@@ -24,5 +24,15 @@
   },
   "drillDown": "Explore procedure",
   "drillDownHint": "View full flow of {{name}}",
-  "stats": "{{type}} / {{lineCount}} lines / {{calls}} calls / {{tables}} table refs."
+  "stats": "{{type}} / {{lineCount}} lines / {{calls}} calls / {{tables}} table refs.",
+  "tabs": {
+    "pipeline": "Pipeline",
+    "controlFlow": "Control Flow"
+  },
+  "flowTree": {
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "showMore": "Show {{count}} more of {{remaining}} remaining...",
+    "noFlow": "No control flow data available"
+  }
 }

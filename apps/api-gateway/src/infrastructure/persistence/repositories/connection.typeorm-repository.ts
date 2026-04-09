@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { DbConnection, DbEngine } from '../../../domain/entities/db-connection.entity';
 import { IConnectionRepository } from '../../../domain/repositories/connection.repository';
 import { DbConnectionOrmEntity } from '../entities/db-connection.orm-entity';
+import { slugify } from '../../../shared/utils/slugify';
 
 @Injectable()
 export class ConnectionTypeOrmRepository implements IConnectionRepository {
@@ -40,6 +41,7 @@ export class ConnectionTypeOrmRepository implements IConnectionRepository {
     const entity = this.repo.create({
       tenantId: data.tenantId,
       name: data.name,
+      slug: data.slug || slugify(data.name),
       engine: data.engine,
       host: data.host,
       port: data.port,
@@ -75,7 +77,7 @@ export class ConnectionTypeOrmRepository implements IConnectionRepository {
 
   private toDomain(e: DbConnectionOrmEntity): DbConnection {
     return new DbConnection(
-      e.id, e.tenantId, e.name, e.engine as DbEngine, e.host, e.port,
+      e.id, e.tenantId, e.name, e.slug, e.engine as DbEngine, e.host, e.port,
       e.databaseName, e.username, e.vaultSecretPath, e.encryptedPassword, e.useSsl, e.sslCaCert,
       e.connectionOptions, e.lastTestedAt, e.lastTestStatus as any,
       e.isActive, e.createdBy, e.createdAt, e.updatedAt,

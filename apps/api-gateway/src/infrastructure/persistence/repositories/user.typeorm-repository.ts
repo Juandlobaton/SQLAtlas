@@ -22,6 +22,11 @@ export class UserTypeOrmRepository implements IUserRepository {
     return entity ? this.toDomain(entity) : null;
   }
 
+  async findByExternalId(tenantId: string, externalId: string): Promise<User | null> {
+    const entity = await this.repo.findOne({ where: { tenantId, externalId } });
+    return entity ? this.toDomain(entity) : null;
+  }
+
   async findByTenant(tenantId: string): Promise<User[]> {
     const entities = await this.repo.find({
       where: { tenantId },

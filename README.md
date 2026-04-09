@@ -6,8 +6,11 @@
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E.svg)](https://nestjs.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED.svg)](docker/docker-compose.yml)
+[![Demo](https://img.shields.io/badge/Live_Demo-sqlatlas.netlify.app-00C7B7.svg)](https://sqlatlas.netlify.app)
 
 > Open-source platform to **map**, **analyze**, and **document** stored procedures across SQL Server, PostgreSQL, and Oracle.
+
+**[Try the Live Demo](https://sqlatlas.netlify.app)** — No login required. Explore dependency graphs, execution flows, and security analysis across SQL Server, PostgreSQL, and Oracle with real pre-analyzed data.
 
 SQLAtlas parses your database objects, builds interactive dependency graphs, detects security vulnerabilities, tracks complexity metrics, and auto-generates documentation — all from a single unified interface.
 
@@ -273,6 +276,22 @@ Highlights:
 | [Architecture](docs/architecture/overview.md) | System design and data flow |
 | [Contributing](CONTRIBUTING.md) | How to contribute |
 | [Security Policy](SECURITY.md) | Vulnerability reporting |
+
+---
+
+## Live Demo
+
+Explore SQLAtlas without installing anything: **[sqlatlas.netlify.app](https://sqlatlas.netlify.app)**
+
+The demo includes pre-analyzed data from 3 database engines:
+
+| Engine | Connection | Procedures | Dependencies | Tables |
+|--------|-----------|-----------|--------------|--------|
+| SQL Server | Banking Test (T-SQL) | 21 | 90 | 15 |
+| PostgreSQL | Banking Demo (PL/pgSQL) | 53 | 16 | 19 |
+| Oracle | PL/SQL Test | 53 | 11 | 6 |
+
+All 127 procedures have pre-computed execution flow trees, dependency analysis, complexity metrics, and security findings. No backend required — the demo runs entirely in the browser.
 
 ---
 

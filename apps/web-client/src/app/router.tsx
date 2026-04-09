@@ -1,16 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
-import { AppShell } from '@/shared/components/layout/AppShell';
 import { AuthGuard } from '@/shared/components/AuthGuard';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { PlaygroundPage } from '@/pages/PlaygroundPage';
-import { LineagePage } from '@/pages/LineagePage';
-import { ConnectionsPage } from '@/pages/ConnectionsPage';
-import { DocsPage } from '@/pages/DocsPage';
-import { SecurityPage } from '@/pages/SecurityPage';
-import { FlowPage } from '@/pages/FlowPage';
-import { TablesPage } from '@/pages/TablesPage';
-import { ERDiagramPage } from '@/pages/ERDiagramPage';
-import { SettingsPage } from '@/pages/SettingsPage';
+import { StudioShell } from '@/shared/components/layout/StudioShell';
 import { LoginPage } from '@/pages/LoginPage';
 import { SetupPage } from '@/pages/SetupPage';
 
@@ -18,21 +8,7 @@ export const router = createBrowserRouter([
   { path: '/setup', element: <SetupPage /> },
   { path: '/login', element: <LoginPage /> },
   {
-    path: '/',
-    element: <AuthGuard><AppShell /></AuthGuard>,
-    children: [
-      { index: true, element: <DashboardPage /> },
-      { path: 'explorer', element: <PlaygroundPage /> },
-      { path: 'explorer/:connectionId/:procedureId', element: <PlaygroundPage /> },
-      { path: 'graph', element: <LineagePage /> },
-      { path: 'flow', element: <FlowPage /> },
-      { path: 'flow/:connectionId/:procedureId', element: <FlowPage /> },
-      { path: 'connections', element: <ConnectionsPage /> },
-      { path: 'tables', element: <TablesPage /> },
-      { path: 'er-diagram', element: <ERDiagramPage /> },
-      { path: 'security', element: <SecurityPage /> },
-      { path: 'docs', element: <DocsPage /> },
-      { path: 'settings', element: <SettingsPage /> },
-    ],
+    path: '/*',
+    element: <AuthGuard><StudioShell /></AuthGuard>,
   },
 ]);
