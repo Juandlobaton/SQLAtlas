@@ -7,15 +7,17 @@ RAISERROR/THROW, PRINT, BREAK/CONTINUE.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from src.domain.entities.flow_node import FlowNode
 from src.infrastructure.analyzers.flow_builder_base import (
     FlowBuilderBase,
     StackFrame,
-    _extract_tables,
     extract_variables_tsql,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class TsqlFlowEngine(FlowBuilderBase):
@@ -67,7 +69,9 @@ class TsqlFlowEngine(FlowBuilderBase):
 
     # ── T-SQL specific handlers ──
 
-    def _handle_begin_try(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_begin_try(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bBEGIN\s+TRY\b", upper):
             return None
         node = FlowNode(
@@ -82,7 +86,9 @@ class TsqlFlowEngine(FlowBuilderBase):
         ))
         return line_idx + 1
 
-    def _handle_begin_catch(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_begin_catch(self, line_idx: int, _stripped: str,
+
+            upper: str, _line_num: int) -> int | None:
         if not re.match(r"\bBEGIN\s+CATCH\b", upper):
             return None
         if self._current_frame().block_type == "try":
@@ -102,21 +108,27 @@ class TsqlFlowEngine(FlowBuilderBase):
             ))
         return line_idx + 1
 
-    def _handle_end_try(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_end_try(self, line_idx: int, _stripped: str,
+
+            upper: str, _line_num: int) -> int | None:
         if not re.match(r"\bEND\s+TRY\b", upper):
             return None
         if len(self._stack) > 1 and self._current_frame().block_type == "try":
             self._stack.pop()
         return line_idx + 1
 
-    def _handle_end_catch(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_end_catch(self, line_idx: int, _stripped: str,
+
+            upper: str, _line_num: int) -> int | None:
         if not re.match(r"\bEND\s+CATCH\b", upper):
             return None
         if len(self._stack) > 1 and self._current_frame().block_type == "catch":
             self._stack.pop()
         return line_idx + 1
 
-    def _handle_raiserror_throw(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_raiserror_throw(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\b(RAISERROR|THROW)\b", upper):
             return None
         full_text, end_idx = self._accumulate_statement(line_idx)
@@ -131,7 +143,9 @@ class TsqlFlowEngine(FlowBuilderBase):
         self._append_node(node)
         return end_idx + 1
 
-    def _handle_print(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_print(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bPRINT\b", upper):
             return None
         vars_read = self._vars(stripped)
@@ -143,7 +157,9 @@ class TsqlFlowEngine(FlowBuilderBase):
         self._append_node(node)
         return line_idx + 1
 
-    def _handle_break_continue(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_break_continue(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\b(BREAK|CONTINUE)\b", upper):
             return None
         op = "BREAK" if "BREAK" in upper else "CONTINUE"

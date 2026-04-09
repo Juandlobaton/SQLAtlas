@@ -7,15 +7,17 @@ IF...THEN...END IF, LOOP...END LOOP, EXCEPTION/WHEN, ELSIF, EXIT WHEN, RAISE.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from src.domain.entities.flow_node import FlowNode
 from src.infrastructure.analyzers.flow_builder_base import (
     FlowBuilderBase,
     StackFrame,
-    _extract_tables,
     extract_variables_plsql,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class AnsiFlowEngine(FlowBuilderBase):
@@ -68,7 +70,9 @@ class AnsiFlowEngine(FlowBuilderBase):
 
     # ── ANSI-specific handlers ──
 
-    def _handle_exception(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_exception(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bEXCEPTION\b", upper):
             return None
         if re.match(r"\bEXCEPTION_INIT\b", upper):
@@ -86,7 +90,9 @@ class AnsiFlowEngine(FlowBuilderBase):
         ))
         return line_idx + 1
 
-    def _handle_when_in_exception(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_when_in_exception(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bWHEN\b", upper) or len(self._stack) <= 1:
             return None
 
@@ -117,20 +123,26 @@ class AnsiFlowEngine(FlowBuilderBase):
         ))
         return line_idx + 1
 
-    def _handle_end_if(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_end_if(self, line_idx: int, _stripped: str,
+
+            upper: str, _line_num: int) -> int | None:
         if not re.match(r"\bEND\s+IF\b", upper):
             return None
         self._pop_frames_until(("if_true", "if_false"))
         return line_idx + 1
 
-    def _handle_end_loop(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_end_loop(self, line_idx: int, _stripped: str,
+
+            upper: str, _line_num: int) -> int | None:
         if not re.match(r"\bEND\s+LOOP\b", upper):
             return None
         if len(self._stack) > 1 and self._current_frame().block_type == "while":
             self._stack.pop()
         return line_idx + 1
 
-    def _handle_loop_standalone(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_loop_standalone(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not (re.match(r"\bLOOP\s*$", upper) or upper == "LOOP"):
             return None
         node = FlowNode(
@@ -145,7 +157,9 @@ class AnsiFlowEngine(FlowBuilderBase):
         ))
         return line_idx + 1
 
-    def _handle_exit_when(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_exit_when(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bEXIT\b", upper):
             return None
         condition = None
@@ -160,7 +174,9 @@ class AnsiFlowEngine(FlowBuilderBase):
         self._append_node(node)
         return line_idx + 1
 
-    def _handle_raise(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_raise(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bRAISE\b", upper):
             return None
         if re.match(r"\bRAISERROR\b", upper):

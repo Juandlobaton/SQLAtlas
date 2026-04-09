@@ -7,9 +7,12 @@ RETURN QUERY/NEXT, GET DIAGNOSTICS) as needed.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from src.infrastructure.analyzers.flow_builder_ansi import AnsiFlowEngine
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class PlpgsqlFlowEngine(AnsiFlowEngine):
