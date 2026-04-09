@@ -182,9 +182,11 @@ export function FlowPage() {
     };
   }, [selectedProc, parsedData]);
 
-  // Extract flow tree for selected procedure
+  // Extract flow tree: prefer stored data, fallback to parsed
   const flowTree = useMemo<FlowTreeNode | null>(() => {
     if (!selectedProc) return null;
+    const stored = (selectedProc as any).flowTree as FlowTreeNode | null;
+    if (stored) return stored;
     const pd = parsedData[selectedProc.id];
     return pd?.flowTree as FlowTreeNode | null ?? null;
   }, [selectedProc, parsedData]);
