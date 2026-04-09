@@ -1,0 +1,65 @@
+services:
+  # ── App Database (PostgreSQL 16) ──
+  sqlatlas-db:
+    image: postgres:16-alpine
+    container_name: sqlatlas-db
+    restart: unless-stopped
+    ports:
+      - "${PGPORT:-9432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sqlatlas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-sqlatlas}
+    volumes:
+      - sqlatlas_pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sqlatlas"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Cache (Redis 7) ──
+  sqlatlas-redis:
+    image: redis:7-alpine
+    container_name: sqlatlas-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-9379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Test DB: SQL Server 2022 ──
+  sqlatlas-mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlatlas-mssql
+    restart: unless-stopped
+    ports:
+      - "${MSSQL_PORT:-9433}:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-ChangeMeNow!1}
+    volumes:
+      - sqlatlas_mssqldata:/var/opt/mssql
+
+  # ── Test DB: Oracle Free 23 ──
+  sqlatlas-oracle:
+    image: gvenzl/oracle-free:23-slim
+    container_name: sqlatlas-oracle
+    restart: unless-stopped
+    ports:
+      - "${ORACLE_PORT:-9521}:1521"
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD:-ChangeMeNow!1}
+      APP_USER: ${ORACLE_APP_USER:-testuser}
+      APP_USER_PASSWORD: ${ORACLE_APP_USER_PASSWORD:-ChangeMeNow!1}
+    volumes:
+      - sqlatlas_oracledata:/opt/oracle/oradata
+
+volumes:
+  sqlatlas_pgdata:
+  sqlatlas_mssqldata:
+  sqlatlas_oracledata:

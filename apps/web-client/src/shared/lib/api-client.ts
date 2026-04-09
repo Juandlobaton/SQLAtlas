@@ -65,8 +65,8 @@ async function request<T>(base: string, path: string, options: RequestOptions = 
     }
   }
 
-  // If still 401 after refresh attempt, logout
-  if (response.status === 401 && !IS_DEMO) {
+  // If still 401 after refresh attempt, logout (skip for auth endpoints — they handle their own errors)
+  if (response.status === 401 && !IS_DEMO && !path.includes('/auth/')) {
     fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
     window.location.href = '/login';
     throw new Error('Session expired');

@@ -9,6 +9,7 @@ import {
   PaginatedResult,
 } from '../../../domain/repositories/procedure.repository';
 import { ProcedureOrmEntity } from '../entities/procedure.orm-entity';
+import { slugify } from '../../../shared/utils/slugify';
 
 const CHUNK_SIZE = 50;
 
@@ -86,6 +87,7 @@ export class ProcedureTypeOrmRepository implements IProcedureRepository {
       existing.estimatedComplexity = data.estimatedComplexity;
       existing.lineCount = data.lineCount;
       existing.autoDoc = data.autoDoc;
+      existing.flowTree = data.flowTree;
       existing.securityFindings = data.securityFindings as any;
       existing.lastSeenAt = new Date();
       existing.isDeleted = false;
@@ -101,6 +103,7 @@ export class ProcedureTypeOrmRepository implements IProcedureRepository {
       objectType: data.objectType,
       schemaName: data.schemaName,
       objectName: data.objectName,
+      slug: data.slug || slugify(data.fullQualifiedName),
       fullQualifiedName: data.fullQualifiedName,
       rawDefinition: data.rawDefinition,
       definitionHash: data.definitionHash,
@@ -111,6 +114,7 @@ export class ProcedureTypeOrmRepository implements IProcedureRepository {
       estimatedComplexity: data.estimatedComplexity,
       lineCount: data.lineCount,
       autoDoc: data.autoDoc,
+      flowTree: data.flowTree,
       securityFindings: data.securityFindings as any,
       sourceCreatedAt: data.sourceCreatedAt,
       sourceModifiedAt: data.sourceModifiedAt,
@@ -158,10 +162,10 @@ export class ProcedureTypeOrmRepository implements IProcedureRepository {
   private toDomain(e: ProcedureOrmEntity): Procedure {
     return new Procedure(
       e.id, e.tenantId, e.connectionId, e.schemaId, e.analysisJobId,
-      e.objectType as ObjectType, e.schemaName, e.objectName, e.fullQualifiedName,
+      e.objectType as ObjectType, e.schemaName, e.objectName, e.slug, e.fullQualifiedName,
       e.rawDefinition, e.definitionHash, e.language, e.parameters as any,
       e.returnType, e.isDeterministic, e.estimatedComplexity, e.lineCount,
-      e.autoDoc, e.securityFindings as any, e.sourceCreatedAt, e.sourceModifiedAt,
+      e.autoDoc, e.flowTree, e.securityFindings as any, e.sourceCreatedAt, e.sourceModifiedAt,
       e.firstSeenAt, e.lastSeenAt, e.isDeleted, e.createdAt, e.updatedAt,
     );
   }

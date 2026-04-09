@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 /*
  * Navigation model:
@@ -47,6 +48,7 @@ export interface StudioTab {
   connectionId?: string;
   schemaName?: string;
   objectType?: string;
+  defaultView?: 'flow' | 'tree' | 'source' | 'docs' | 'security';
   // Table
   tableId?: string;
 }
@@ -72,7 +74,7 @@ interface StudioState {
   setActiveTab: (id: string | null) => void;
 }
 
-export const useStudioStore = create<StudioState>((set, get) => ({
+export const useStudioStore = create<StudioState>()(persist((set, get) => ({
   activeModule: 'home',
   tabs: [],
   activeTabId: null,
@@ -112,4 +114,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   },
 
   setActiveTab: (id) => set({ activeTabId: id }),
+}), {
+  name: 'sqlatlas-studio',
+  partialize: (state) => ({
+    activeModule: state.activeModule,
+    connectionId: state.connectionId,
+    moduleState: state.moduleState,
+    tabs: state.tabs,
+    activeTabId: state.activeTabId,
+  }),
 }));

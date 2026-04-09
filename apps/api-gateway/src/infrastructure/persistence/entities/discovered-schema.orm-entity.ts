@@ -17,6 +17,10 @@ export class DiscoveredSchemaOrmEntity {
   @Column({ name: 'schema_name', length: 255 })
   schemaName!: string;
 
+  @Column({ length: 300 })
+  @Index()
+  slug!: string;
+
   @Column({ name: 'catalog_name', type: 'varchar', length: 255, nullable: true })
   catalogName!: string | null;
 

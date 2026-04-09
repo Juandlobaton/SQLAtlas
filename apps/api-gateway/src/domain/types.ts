@@ -30,7 +30,7 @@ export interface UserProps {
 }
 
 export interface DbConnectionProps {
-  id: string; tenantId: string; name: string; engine: DbEngine;
+  id: string; tenantId: string; name: string; slug: string; engine: DbEngine;
   host: string; port: number; databaseName: string; username: string;
   vaultSecretPath: string | null; encryptedPassword: string | null;
   useSsl: boolean; sslCaCert: string | null;
@@ -50,11 +50,12 @@ export interface AnalysisJobProps {
 export interface ProcedureProps {
   id: string; tenantId: string; connectionId: string; schemaId: string | null;
   analysisJobId: string | null; objectType: ObjectType; schemaName: string;
-  objectName: string; fullQualifiedName: string; rawDefinition: string;
+  objectName: string; slug: string; fullQualifiedName: string; rawDefinition: string;
   definitionHash: string; language: string; parameters: ProcedureParameter[];
   returnType: string | null; isDeterministic: boolean | null;
   estimatedComplexity: number | null; lineCount: number;
-  autoDoc: Record<string, unknown> | null; securityFindings: SecurityFinding[];
+  autoDoc: Record<string, unknown> | null; flowTree: Record<string, unknown> | null;
+  securityFindings: SecurityFinding[];
   sourceCreatedAt: Date | null; sourceModifiedAt: Date | null;
   firstSeenAt: Date; lastSeenAt: Date; isDeleted: boolean;
   createdAt: Date; updatedAt: Date;
@@ -75,7 +76,7 @@ export interface AuditLogProps {
 }
 
 export interface DiscoveredSchemaProps {
-  id: string; tenantId: string; connectionId: string; schemaName: string;
+  id: string; tenantId: string; connectionId: string; schemaName: string; slug: string;
   catalogName: string | null; objectCounts: SchemaObjectCounts;
   sizeBytes: number | null; owner: string | null;
   firstSeenAt: Date; lastSeenAt: Date; createdAt: Date;
@@ -83,7 +84,7 @@ export interface DiscoveredSchemaProps {
 
 export interface DiscoveredTableProps {
   id: string; tenantId: string; connectionId: string; schemaId: string;
-  schemaName: string; tableName: string; fullQualifiedName: string;
+  schemaName: string; tableName: string; slug: string; fullQualifiedName: string;
   tableType: TableType; estimatedRowCount: number | null; sizeBytes: number | null;
   columns: TableColumn[]; primaryKey: string[]; foreignKeys: ForeignKey[];
   indexes: TableIndex[]; referencedByCount: number;

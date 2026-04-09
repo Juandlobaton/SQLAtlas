@@ -241,7 +241,7 @@ export class AuthController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const frontendUrl = process.env.CORS_ORIGINS?.split(',')[0] || 'http://localhost:5173';
+    const frontendUrl = process.env.CORS_ORIGINS?.split(',')[0] || 'http://localhost:9100';
 
     if (error) {
       res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorDesc || error)}`);

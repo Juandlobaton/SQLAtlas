@@ -7,6 +7,7 @@ export class DiscoveredSchema {
     public readonly tenantId: string,
     public readonly connectionId: string,
     public readonly schemaName: string,
+    public readonly slug: string,
     public readonly catalogName: string | null,
     public readonly objectCounts: SchemaObjectCounts,
     public readonly sizeBytes: number | null,

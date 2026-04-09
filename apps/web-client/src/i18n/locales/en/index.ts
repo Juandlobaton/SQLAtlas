@@ -10,6 +10,7 @@ import docs from './docs.json';
 import settings from './settings.json';
 import login from './login.json';
 import lineage from './lineage.json';
+import tables from './tables.json';
 
 export default {
   common,
@@ -24,4 +25,5 @@ export default {
   settings,
   login,
   lineage,
+  tables,
 };

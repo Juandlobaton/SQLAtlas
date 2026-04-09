@@ -4,6 +4,7 @@ import { IsNull, Repository } from 'typeorm';
 import { DiscoveredSchema } from '../../../domain/entities/discovered-schema.entity';
 import { IDiscoveredSchemaRepository } from '../../../domain/repositories/discovered-schema.repository';
 import { DiscoveredSchemaOrmEntity } from '../entities/discovered-schema.orm-entity';
+import { slugify } from '../../../shared/utils/slugify';
 
 @Injectable()
 export class DiscoveredSchemaTypeOrmRepository implements IDiscoveredSchemaRepository {
@@ -55,6 +56,7 @@ export class DiscoveredSchemaTypeOrmRepository implements IDiscoveredSchemaRepos
       tenantId: data.tenantId,
       connectionId: data.connectionId,
       schemaName: data.schemaName,
+      slug: data.slug || slugify(data.schemaName),
       catalogName: data.catalogName,
       objectCounts: data.objectCounts as any,
       sizeBytes: data.sizeBytes,
@@ -79,7 +81,7 @@ export class DiscoveredSchemaTypeOrmRepository implements IDiscoveredSchemaRepos
 
   private toDomain(e: DiscoveredSchemaOrmEntity): DiscoveredSchema {
     return new DiscoveredSchema(
-      e.id, e.tenantId, e.connectionId, e.schemaName, e.catalogName,
+      e.id, e.tenantId, e.connectionId, e.schemaName, e.slug, e.catalogName,
       e.objectCounts as any, e.sizeBytes, e.owner,
       e.firstSeenAt, e.lastSeenAt, e.createdAt,
     );

@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  GitBranch, Search, Loader2, ChevronRight, ChevronDown,
-  Table2, Workflow, Shield, ArrowRight, Eye, Zap,
+  GitBranch, Loader2, ChevronRight, ChevronDown, X,
+  Table2, Workflow, Shield, ArrowRight, Eye, Zap, Waypoints,
   PenTool, Trash2, ExternalLink, Variable, Code,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,16 @@ import { parserApi } from '@/shared/lib/api-client';
 import { FlowBreadcrumb, type BreadcrumbItem } from '@/features/visualization/components/FlowBreadcrumb';
 import { VariableTracePanel } from '@/features/visualization/components/VariableTracePanel';
 import { FlowTreeView } from '@/features/visualization/components/FlowTreeView';
+import { PipelineCanvas } from '@/features/studio/components/PipelineCanvas';
 import type { FlowTreeNode } from '@/features/visualization/types/flow-tree';
+import { ModuleToolbar } from '@/shared/components/layout/ModuleToolbar';
+import { ModulePageLayout } from '@/shared/components/layout/ModulePageLayout';
+import { SidePanel } from '@/shared/components/layout/SidePanel';
+import { SidePanelSearch } from '@/shared/components/SidePanelSearch';
+import { ConnectionSelector } from '@/shared/components/ConnectionSelector';
+import { EmptyState } from '@/shared/components/EmptyState';
+import { PageTabs } from '@/shared/components/PageTabs';
+// import { useOpenProcedureTab } from '@/shared/hooks/useOpenProcedureTab';
 
 const OP_ICON: Record<string, { icon: typeof Eye; color: string; label: string }> = {
   SELECT: { icon: Eye, color: 'text-emerald-400', label: 'READ' },
@@ -34,7 +43,8 @@ export function FlowPage() {
   const { t } = useTranslation(['flow', 'common']);
   const navigate = useNavigate();
   const { procedureId: urlProcedureId } = useParams();
-  const { connectionId: activeId, setConnectionId, connections } = useGlobalConnection();
+  const { connectionId: activeId } = useGlobalConnection();
+  // const openProcTab = useOpenProcedureTab(); // Available for external tab opening if needed
 
   const [search, setSearch] = useStudioContext('flow', 'search', '');
   const [selectedProc, setSelectedProc] = useStudioContext<ProcedureItem | null>('flow', 'selectedProc', null);
@@ -42,7 +52,8 @@ export function FlowPage() {
   const [loading, setLoading] = useState(false);
   const [callStack, setCallStack] = useStudioContext<CallStackEntry[]>('flow', 'callStack', []);
   const [showVariableTrace, setShowVariableTrace] = useState(false);
-  const [flowViewTab, setFlowViewTab] = useStudioContext<'pipeline' | 'controlFlow'>('flow', 'flowViewTab', 'pipeline');
+  const [flowViewTab, setFlowViewTab] = useStudioContext<'pipeline' | 'controlFlow' | 'diagram'>('flow', 'flowViewTab', 'pipeline');
+  const [openTabs, setOpenTabs] = useStudioContext<ProcedureItem[]>('flow', 'openTabs', []);
 
   // Reset when connection changes
   const prevConn = useRef(activeId);
@@ -51,6 +62,7 @@ export function FlowPage() {
       setSelectedProc(null);
       setParsedData({});
       setCallStack([]);
+      setOpenTabs([]);
     }
     prevConn.current = activeId;
   }, [activeId, setSelectedProc, setParsedData, setCallStack]);
@@ -180,6 +192,8 @@ export function FlowPage() {
   const handleSelect = useCallback(async (proc: ProcedureItem) => {
     setSelectedProc(proc);
     setCallStack([]);
+    // Add to open tabs if not already there
+    setOpenTabs(prev => prev.some(t => t.id === proc.id) ? prev : [...prev, proc]);
     if (!parsedDataRef.current[proc.id] && proc.rawDefinition) {
       setLoading(true);
       try { await parseProc(proc); } catch { /* skip */ }
@@ -187,21 +201,18 @@ export function FlowPage() {
     }
   }, [parseProc]);
 
-  // Drill-down: navigate into a child SP
+  // Drill-down: open child SP as a new tab
   const handleDrillDown = useCallback(async (childProc: ProcedureItem) => {
-    if (!selectedProc) return;
-
-    // Push current state onto call stack
-    const currentParsed = parsedDataRef.current[selectedProc.id];
-    setCallStack(prev => [...prev, { proc: selectedProc, parsedData: currentParsed }]);
     setSelectedProc(childProc);
+    setCallStack([]);
+    setOpenTabs(prev => prev.some(t => t.id === childProc.id) ? prev : [...prev, childProc]);
 
     if (!parsedDataRef.current[childProc.id] && childProc.rawDefinition) {
       setLoading(true);
       try { await parseProc(childProc); } catch { /* skip */ }
       finally { setLoading(false); }
     }
-  }, [selectedProc, parseProc]);
+  }, [parseProc]);
 
   // Breadcrumb navigation: pop back to a level
   const handleBreadcrumbNavigate = useCallback((index: number) => {
@@ -235,44 +246,57 @@ export function FlowPage() {
     return items;
   }, [callStack, selectedProc]);
 
-  return (
-    <div className="h-full flex flex-col">
-      {/* Compact toolbar */}
-      <div className="h-10 flex-none flex items-center justify-between px-3 border-b border-surface-200 bg-surface-50/80">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-2">
-            <GitBranch className="w-4 h-4 text-brand-500 flex-shrink-0" />
-            <span className="text-sm font-semibold truncate">{t('flow:title')}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {selectedProc && parsedData[selectedProc.id] && (
-            <button
-              onClick={() => setShowVariableTrace(!showVariableTrace)}
-              className={cn('btn-ghost text-xs', showVariableTrace && 'bg-brand-500/10 text-brand-500')}
-            >
-              <Variable className="w-3.5 h-3.5" />
-              {t('flow:variableTrace.title')}
-            </button>
-          )}
-          {connections && (connections as any[]).length > 0 && (
-            <select value={activeId || ''} onChange={(e) => setConnectionId(e.target.value || null)}
-              className="input w-44 text-xs h-7">
-              {connections.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          )}
-        </div>
-      </div>
+  // Close tab
+  const closeTab = useCallback((procId: string) => {
+    setOpenTabs(prev => {
+      const filtered = prev.filter(t => t.id !== procId);
+      if (selectedProc?.id === procId) {
+        const idx = prev.findIndex(t => t.id === procId);
+        const next = filtered[Math.min(idx, filtered.length - 1)] ?? null;
+        setSelectedProc(next);
+        setCallStack([]);
+      }
+      return filtered;
+    });
+  }, [selectedProc]);
 
-      <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Procedure list */}
-        <div className="w-72 flex-shrink-0 card flex flex-col overflow-hidden">
-          <div className="p-2 border-b border-surface-200/60">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-400" />
-              <input className="input pl-8 text-xs py-1.5" placeholder={t('flow:searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-          </div>
+  // Switch tab
+  const switchTab = useCallback((proc: ProcedureItem) => {
+    setSelectedProc(proc);
+    setCallStack([]);
+  }, []);
+
+  const flowViewTabs = useMemo(() => [
+    { id: 'pipeline' as const, label: t('flow:tabs.pipeline', { defaultValue: 'Pipeline' }), icon: Workflow },
+    { id: 'controlFlow' as const, label: t('flow:tabs.controlFlow', { defaultValue: 'Flujo de Control' }), icon: GitBranch },
+    { id: 'diagram' as const, label: t('flow:tabs.diagram', { defaultValue: 'Diagrama BPMN' }), icon: Waypoints },
+  ], [t]);
+
+  return (
+    <ModulePageLayout
+      toolbar={
+        <ModuleToolbar
+          icon={GitBranch}
+          title={t('flow:title')}
+          actions={
+            <>
+              {selectedProc && parsedData[selectedProc.id] && (
+                <button
+                  onClick={() => setShowVariableTrace(!showVariableTrace)}
+                  className={cn('btn-ghost text-xs', showVariableTrace && 'bg-brand-500/10 text-brand-500')}
+                >
+                  <Variable className="w-3.5 h-3.5" />
+                  {t('flow:variableTrace.title')}
+                </button>
+              )}
+              <ConnectionSelector />
+            </>
+          }
+        />
+      }
+      sidebar={
+        <SidePanel>
+          <SidePanelSearch value={search} onChange={setSearch} placeholder={t('flow:searchPlaceholder')} />
           <div className="flex-1 overflow-y-auto">
             {isLoading ? (
               <div className="p-3 space-y-2 animate-fade-in">
@@ -310,24 +334,68 @@ export function FlowPage() {
           <div className="p-2 border-t border-surface-200/60 text-2xs text-surface-400 text-center">
             {t('flow:total', { count: procData?.total || 0 })}
           </div>
+        </SidePanel>
+      }
+      rightPanel={
+        showVariableTrace && selectedProc && parsedData[selectedProc.id] ? (
+          <VariableTracePanel
+            variableReferences={parsedData[selectedProc.id].variableReferences || []}
+            onClose={() => setShowVariableTrace(false)}
+          />
+        ) : undefined
+      }
+    >
+      {/* SP Tab bar */}
+      {openTabs.length > 0 && (
+        <div className="h-9 flex-none flex items-end bg-surface-100 border-b border-surface-200 overflow-x-auto">
+          {openTabs.map(tab => {
+            const isActive = selectedProc?.id === tab.id;
+            const tabCfg = tab.objectType === 'function' ? { color: 'text-purple-400', icon: Code }
+              : tab.objectType === 'trigger' ? { color: 'text-amber-400', icon: GitBranch }
+              : { color: 'text-blue-400', icon: Workflow };
+            const TabIcon = tabCfg.icon;
+            return (
+              <div
+                key={tab.id}
+                onClick={() => switchTab(tab)}
+                className={cn(
+                  'group flex items-center gap-1.5 px-3 py-1.5 text-[11px] cursor-pointer min-w-0 max-w-[200px] border-b-2 -mb-px whitespace-nowrap transition-colors',
+                  isActive
+                    ? 'bg-surface-0 text-surface-800 border-brand-500'
+                    : 'text-surface-500 hover:text-surface-700 border-transparent hover:bg-surface-50',
+                )}
+              >
+                <TabIcon className={cn('w-3.5 h-3.5 flex-shrink-0', isActive ? tabCfg.color : 'text-surface-400')} />
+                <span className="truncate font-medium font-mono">{tab.objectName}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
+                  className={cn(
+                    'p-0.5 rounded hover:bg-surface-200 flex-shrink-0 transition-opacity',
+                    isActive ? 'opacity-60 hover:opacity-100' : 'opacity-0 group-hover:opacity-60',
+                  )}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            );
+          })}
         </div>
+      )}
 
-        {/* Pipeline view */}
-        <div className="flex-1 card overflow-y-auto">
+      {/* Pipeline view */}
+      <div className={cn('h-full', flowViewTab === 'diagram' ? 'overflow-hidden' : 'overflow-y-auto')}>
           {!selectedProc ? (
-            <div className="flex items-center justify-center h-full text-surface-400">
-              <div className="text-center"><Workflow className="w-10 h-10 mx-auto mb-3 opacity-20" /><p className="text-xs">{t('flow:emptyState')}</p></div>
-            </div>
+            <EmptyState icon={Workflow} title={t('flow:emptyState')} />
           ) : loading ? (
             <div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
           ) : callTree ? (
-            <div className="p-5 animate-fade-in">
-              {/* Breadcrumb */}
-              {breadcrumbItems.length > 0 && (
+            <div className={cn('animate-fade-in', flowViewTab === 'diagram' ? 'h-full flex flex-col' : 'p-5')}>
+              {/* Breadcrumb + Header — hidden in diagram mode */}
+              {flowViewTab !== 'diagram' && breadcrumbItems.length > 0 && (
                 <FlowBreadcrumb items={breadcrumbItems} onNavigate={handleBreadcrumbNavigate} />
               )}
 
-              {/* Header */}
+              {flowViewTab !== 'diagram' && (
               <div className="mb-5 pb-4 border-b border-surface-200/60">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-9 h-9 rounded-lg bg-brand-500/10 border border-brand-500/20 flex items-center justify-center">
@@ -385,33 +453,11 @@ export function FlowPage() {
                   )}
                 </div>
               </div>
+              )}
 
               {/* View tabs */}
-              <div className="flex border-b border-surface-200/60 mb-4">
-                <button
-                  onClick={() => setFlowViewTab('pipeline')}
-                  className={cn(
-                    'px-3 py-2 text-xs font-medium border-b-2 transition-colors',
-                    flowViewTab === 'pipeline'
-                      ? 'border-brand-500 text-brand-600'
-                      : 'border-transparent text-surface-500 hover:text-surface-700',
-                  )}
-                >
-                  <Workflow className="w-3.5 h-3.5 inline mr-1.5" />
-                  {t('flow:tabs.pipeline', { defaultValue: 'Pipeline' })}
-                </button>
-                <button
-                  onClick={() => setFlowViewTab('controlFlow')}
-                  className={cn(
-                    'px-3 py-2 text-xs font-medium border-b-2 transition-colors',
-                    flowViewTab === 'controlFlow'
-                      ? 'border-brand-500 text-brand-600'
-                      : 'border-transparent text-surface-500 hover:text-surface-700',
-                  )}
-                >
-                  <GitBranch className="w-3.5 h-3.5 inline mr-1.5" />
-                  {t('flow:tabs.controlFlow', { defaultValue: 'Flujo de Control' })}
-                </button>
+              <div className={flowViewTab === 'diagram' ? 'px-3 pt-2' : 'mb-4'}>
+                <PageTabs value={flowViewTab} onChange={setFlowViewTab} tabs={flowViewTabs} />
               </div>
 
               {/* Pipeline view (existing) */}
@@ -470,7 +516,7 @@ export function FlowPage() {
                 </>
               )}
 
-              {/* Control Flow view (new) */}
+              {/* Control Flow view */}
               {flowViewTab === 'controlFlow' && (
                 <div className="animate-fade-in">
                   {flowTree ? (
@@ -485,23 +531,41 @@ export function FlowPage() {
                   )}
                 </div>
               )}
+
+              {/* BPMN Diagram view (React Flow) */}
+              {flowViewTab === 'diagram' && (
+                <div className="flex-1 min-h-0">
+                  {flowTree ? (
+                    <PipelineCanvas
+                      key={selectedProc?.id}
+                      flowTree={flowTree}
+                      onDrillDown={(procName) => {
+                        const shortName = procName.split('.').pop() || procName;
+                        const match = procByName.get(shortName) || procByName.get(procName) ||
+                          procedures.find(p =>
+                            p.objectName.toLowerCase() === shortName.toLowerCase() ||
+                            p.fullQualifiedName.toLowerCase() === procName.toLowerCase()
+                          );
+                        if (match) handleSelect(match);
+                      }}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-surface-400">
+                      <p className="text-xs">
+                        {t('flow:flowTree.noFlow', { defaultValue: 'No hay datos de flujo de control disponibles' })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-surface-400">
               <p className="text-xs">{t('flow:parseError')}</p>
             </div>
           )}
-        </div>
-
-        {/* Variable Trace Panel */}
-        {showVariableTrace && selectedProc && parsedData[selectedProc.id] && (
-          <VariableTracePanel
-            variableReferences={parsedData[selectedProc.id].variableReferences || []}
-            onClose={() => setShowVariableTrace(false)}
-          />
-        )}
       </div>
-    </div>
+    </ModulePageLayout>
   );
 }
 

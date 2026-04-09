@@ -10,6 +10,7 @@ export class DiscoveredTable {
     public readonly schemaId: string,
     public readonly schemaName: string,
     public readonly tableName: string,
+    public readonly slug: string,
     public readonly fullQualifiedName: string,
     public readonly tableType: TableType,
     public readonly estimatedRowCount: number | null,

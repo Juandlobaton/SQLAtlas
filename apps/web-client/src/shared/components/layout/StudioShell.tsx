@@ -34,7 +34,7 @@ const MODULES: { id: Module; icon: typeof Database; labelKey: string; fullWidth:
   { id: 'graph',         icon: Network,         labelKey: 'nav:dataLineage',   fullWidth: true },
   { id: 'tables',        icon: Table2,          labelKey: 'nav:tables',        fullWidth: true },
   { id: 'er-diagram',    icon: Workflow,        labelKey: 'nav:erDiagram',     fullWidth: true },
-  { id: 'security',      icon: Shield,          labelKey: 'nav:security',      fullWidth: false },
+  { id: 'security',      icon: Shield,          labelKey: 'nav:security',      fullWidth: true },
   { id: 'docs',          icon: FileText,        labelKey: 'nav:documentation', fullWidth: false },
   { id: 'settings',      icon: Settings,        labelKey: 'nav:settings',      fullWidth: false },
 ];
@@ -43,11 +43,7 @@ const TAB_TYPE_ICON: Record<string, typeof Database> = {
   procedure: Waypoints, table: Table2, connection: Database,
 };
 
-function useTheme() {
-  const isDark = document.documentElement.classList.contains('dark');
-  const toggle = () => document.documentElement.classList.toggle('dark');
-  return { isDark, toggle };
-}
+import { useTheme } from '@/shared/hooks/useTheme';
 
 /* ═══ Main Shell ═══ */
 
@@ -55,7 +51,8 @@ export function StudioShell() {
   const { t } = useTranslation(['nav', 'common']);
   const { activeModule, tabs, activeTabId, setModule, closeTab, setActiveTab } = useStudioStore();
   const { user, logout } = useAuthStore();
-  const { isDark, toggle: toggleTheme } = useTheme();
+  const { theme, toggle: toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
 
   const showingTab = activeTabId !== null;
   const activeTab = tabs.find((tab) => tab.id === activeTabId);
@@ -73,7 +70,7 @@ export function StudioShell() {
       case 'graph':        return <LineagePage />;
       case 'tables':       return <TablesPage />;
       case 'er-diagram':   return <ERDiagramPage />;
-      case 'security':     return wrap(<SecurityPage />);
+      case 'security':     return <SecurityPage />;
       case 'docs':         return wrap(<DocsPage />);
       case 'settings':     return wrap(<SettingsPage />);
       default:             return null;
@@ -83,7 +80,7 @@ export function StudioShell() {
   /* ── Tab content renderer ── */
   function renderTab(tab: StudioTab) {
     if (tab.type === 'procedure' && tab.procedureId && tab.connectionId) {
-      return <ProcedureTabContent procedureId={tab.procedureId} connectionId={tab.connectionId} />;
+      return <ProcedureTabContent procedureId={tab.procedureId} connectionId={tab.connectionId} defaultView={tab.defaultView} />;
     }
     return <div className="p-6 text-surface-400">{tab.label}</div>;
   }

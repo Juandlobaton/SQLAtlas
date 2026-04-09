@@ -33,6 +33,7 @@ export interface ProcedureItem {
   estimatedComplexity: number | null;
   securityFindings: { severity: string; findingType: string; message: string; line?: number; recommendation?: string }[];
   autoDoc: Record<string, unknown> | null;
+  flowTree: Record<string, unknown> | null;
   rawDefinition: string;
   parameters: { name: string; dataType: string; mode: string; defaultValue?: string }[];
 }

@@ -5,6 +5,7 @@ import { IAuditLogRepository } from '../../../domain/repositories/audit-log.repo
 import { ICredentialService } from '../../ports/credential.port';
 import { DbEngine } from '../../../domain/entities/db-connection.entity';
 import { validateHost } from '../../../infrastructure/connectors/host-validator';
+import { slugify } from '../../../shared/utils/slugify';
 
 export class CreateConnectionUseCase {
   constructor(
@@ -45,6 +46,7 @@ export class CreateConnectionUseCase {
     const connection = await this.connectionRepo.create({
       tenantId: input.tenantId,
       name: input.name,
+      slug: slugify(input.name),
       engine: input.engine as DbEngine,
       host: input.host,
       port: input.port,

@@ -6,6 +6,7 @@ import { IProcedureRepository } from '../../../domain/repositories/procedure.rep
 import { IDependencyRepository } from '../../../domain/repositories/dependency.repository';
 import { ITableAccessRepository } from '../../../domain/repositories/table-access.repository';
 import { IDiscoveredTableRepository } from '../../../domain/repositories/discovered-table.repository';
+import { IDiscoveredSchemaRepository } from '../../../domain/repositories/discovered-schema.repository';
 import { IAuditLogRepository } from '../../../domain/repositories/audit-log.repository';
 import { IDbConnector, ExtractedObject } from '../../ports/db-connector.port';
 import { IParsingEngine, ParseEngineResult } from '../../ports/parsing-engine.port';
@@ -16,8 +17,8 @@ import { ObjectType } from '../../../domain/entities/procedure.entity';
 import { DependencyType } from '../../../domain/entities/dependency.entity';
 import { TableOperation } from '../../../domain/entities/table-access.entity';
 import { TableType } from '../../../domain/entities/discovered-table.entity';
-import { randomUUID } from 'crypto';
 import type { CreateProcedure, CreateDependency, CreateTableAccess, CreateDiscoveredTable } from '../../../domain/types';
+import { slugify } from '../../../shared/utils/slugify';
 
 const BATCH_SIZE = 100;
 
@@ -31,6 +32,7 @@ export class StartAnalysisUseCase {
     private readonly dependencyRepo: IDependencyRepository,
     private readonly tableAccessRepo: ITableAccessRepository,
     private readonly discoveredTableRepo: IDiscoveredTableRepository,
+    private readonly discoveredSchemaRepo: IDiscoveredSchemaRepository,
     private readonly auditRepo: IAuditLogRepository,
     private readonly dbConnector: IDbConnector,
     private readonly parsingEngine: IParsingEngine,
@@ -126,13 +128,25 @@ export class StartAnalysisUseCase {
         );
 
         if (tableMetadata.length > 0) {
-          // Generate stable schema IDs per schema name
+          // Create discovered_schemas FIRST (required by FK on discovered_tables)
           const schemaIdMap = new Map<string, string>();
-          for (const t of tableMetadata) {
-            if (!schemaIdMap.has(t.schemaName)) {
-              schemaIdMap.set(t.schemaName, randomUUID());
-            }
+          const uniqueSchemas = new Set(tableMetadata.map(t => t.schemaName));
+          for (const schemaName of uniqueSchemas) {
+            const schema = await this.discoveredSchemaRepo.upsert({
+              tenantId,
+              connectionId,
+              schemaName,
+              slug: slugify(schemaName),
+              catalogName: null,
+              objectCounts: { procedures: 0, functions: 0, triggers: 0, views: 0, tables: 0, sequences: 0, indexes: 0 },
+              sizeBytes: null,
+              owner: null,
+              firstSeenAt: new Date(),
+              lastSeenAt: new Date(),
+            });
+            schemaIdMap.set(schemaName, schema.id);
           }
+          this.logger.log(`[${jobId}] Created ${schemaIdMap.size} schema records`);
 
           const tablesToUpsert: CreateDiscoveredTable[] = tableMetadata.map(t => ({
             tenantId,
@@ -140,6 +154,7 @@ export class StartAnalysisUseCase {
             schemaId: schemaIdMap.get(t.schemaName)!,
             schemaName: t.schemaName,
             tableName: t.tableName,
+            slug: slugify(`${t.schemaName}.${t.tableName}`),
             fullQualifiedName: `${t.schemaName}.${t.tableName}`,
             tableType: (t.tableType === 'materialized_view' ? TableType.MATERIALIZED_VIEW : t.tableType === 'view' ? TableType.VIEW : TableType.TABLE),
             estimatedRowCount: t.estimatedRowCount,
@@ -241,6 +256,7 @@ export class StartAnalysisUseCase {
           objectType: this.mapObjectType(extracted.objectType),
           schemaName: extracted.schemaName,
           objectName: extracted.objectName,
+          slug: slugify(`${extracted.schemaName}.${extracted.objectName}`),
           fullQualifiedName: `${extracted.schemaName}.${extracted.objectName}`,
           rawDefinition: extracted.definition,
           definitionHash: (parsed.definitionHash as string) || '',
@@ -251,6 +267,7 @@ export class StartAnalysisUseCase {
           estimatedComplexity: (parsed.complexity as any)?.cyclomaticComplexity ?? null,
           lineCount: (parsed.lineCount as number) || 0,
           autoDoc: (parsed.autoDoc as Record<string, unknown>) || null,
+          flowTree: (parsed.flowTree as Record<string, unknown>) || null,
           securityFindings: (parsed.securityFindings as any[]) || [],
           sourceCreatedAt: extracted.createdAt || null,
           sourceModifiedAt: extracted.modifiedAt || null,

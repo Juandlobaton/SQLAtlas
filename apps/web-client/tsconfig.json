@@ -13,10 +13,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "esModuleInterop": true,
-    "baseUrl": "./src",
     "paths": {
-      "@/*": ["./*"],
-      "#router": ["./app/router.tsx"]
+      "@/*": ["./src/*"],
+      "#router": ["./src/app/router.tsx"]
     }
   },
   "include": ["src"],

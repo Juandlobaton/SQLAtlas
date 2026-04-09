@@ -32,9 +32,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       .then((res) => {
         if (res.ok) {
           setVerified(true);
+        } else if (res.status === 429) {
+          // Rate limited — allow cached session (don't kick user out)
+          setVerified(true);
         } else {
           // Session expired — clean up and redirect
           localStorage.removeItem('session_user');
+          localStorage.removeItem('sqlatlas-studio');
           logout().catch(() => {});
           navigate('/login', { replace: true });
         }

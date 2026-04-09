@@ -13,30 +13,32 @@ type SubTab = 'flow' | 'tree' | 'source' | 'docs' | 'security';
 interface ProcedureTabProps {
   procedureId: string;
   connectionId: string;
+  defaultView?: SubTab;
 }
 
-export function ProcedureTab({ procedureId, connectionId }: ProcedureTabProps) {
+export function ProcedureTab({ procedureId, connectionId, defaultView }: ProcedureTabProps) {
   const { data: procedure } = useProcedure(connectionId, procedureId);
   const { openTab } = useStudioStore();
 
-  const [subTab, setSubTab] = useState<SubTab>('flow');
+  const [subTab, setSubTab] = useState<SubTab>(defaultView || 'flow');
   const [parsed, setParsed] = useState<Record<string, unknown> | null>(null);
   const [parsing, setParsing] = useState(false);
 
-  // Parse when procedure loads
+  // On-demand parse only when flowTree/autoDoc are not pre-stored
   useEffect(() => {
     if (!procedure?.rawDefinition) return;
+    if (procedure.flowTree && procedure.autoDoc) return; // already stored
     setParsing(true);
     const dialect = procedure.language === 'plpgsql' ? 'plpgsql' : procedure.language === 'plsql' ? 'plsql' : 'tsql';
     parserApi.parse(procedure.rawDefinition, dialect)
       .then((res) => setParsed(res.data?.[0] as Record<string, unknown> ?? null))
       .catch(() => setParsed(null))
       .finally(() => setParsing(false));
-  }, [procedure?.rawDefinition, procedure?.language]);
+  }, [procedure?.rawDefinition, procedure?.language, procedure?.flowTree, procedure?.autoDoc]);
 
-  const flowTree = parseFlowTree(parsed?.flowTree);
-  const autoDoc = parsed?.autoDoc as Record<string, unknown> | null;
-  const securityFindings = (parsed?.securityFindings ?? procedure?.securityFindings ?? []) as { severity: string; message: string; line?: number; recommendation?: string }[];
+  const flowTree = parseFlowTree(procedure?.flowTree ?? parsed?.flowTree);
+  const autoDoc = (procedure?.autoDoc ?? parsed?.autoDoc) as Record<string, unknown> | null;
+  const securityFindings = (procedure?.securityFindings ?? parsed?.securityFindings ?? []) as { severity: string; message: string; line?: number; recommendation?: string }[];
 
   // Drill-down handler
   const handleDrillDown = useCallback((procName: string) => {

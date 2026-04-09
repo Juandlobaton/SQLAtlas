@@ -10,7 +10,7 @@ import { redisStore } from 'cache-manager-ioredis-yet';
       useFactory: async (config: ConfigService) => ({
         store: await redisStore({
           host: config.get('REDIS_HOST', 'localhost'),
-          port: config.get<number>('REDIS_PORT', 6380),
+          port: config.get<number>('REDIS_PORT', 9379),
           ttl: 5 * 60 * 1000, // 5 minutes default TTL
           maxRetriesPerRequest: 3,
         }),

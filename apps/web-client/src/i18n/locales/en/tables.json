@@ -1,0 +1,43 @@
+{
+  "title": "Table Explorer",
+  "subtitle": "Columns, foreign keys, indexes, and procedures accessing each table",
+  "searchPlaceholder": "Search table...",
+  "noResults": "No tables found",
+  "total": "{{count}} tables",
+  "allSchemas": "All schemas",
+  "allTypes": "All types",
+  "columns": "Columns",
+  "foreignKeys": "Foreign Keys",
+  "indexes": "Indexes",
+  "accessedBy": "Accessed By",
+  "noFK": "No foreign keys",
+  "noIndexes": "No indexes",
+  "noAccess": "No procedures access this table",
+  "emptyState": "Select a table to view its details",
+  "columnHeaders": {
+    "name": "Column",
+    "type": "Type",
+    "nullable": "Nullable",
+    "default": "Default",
+    "key": "Key"
+  },
+  "fkHeaders": {
+    "name": "Constraint",
+    "columns": "Columns",
+    "references": "References",
+    "onDelete": "On Delete"
+  },
+  "indexHeaders": {
+    "name": "Index",
+    "columns": "Columns",
+    "type": "Type",
+    "unique": "Unique"
+  },
+  "badges": {
+    "pk": "PK",
+    "fk": "FK",
+    "table": "TABLE",
+    "view": "VIEW",
+    "rows": "{{count}} rows"
+  }
+}

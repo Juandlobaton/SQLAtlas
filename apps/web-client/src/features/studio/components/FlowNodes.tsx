@@ -90,23 +90,33 @@ export const EndNode = memo(function EndNode() {
   );
 });
 
-/* ── Condition Node (diamond) ── */
+/* ── Condition Node (diamond with condition text) ── */
 
 export const ConditionNode = memo(function ConditionNode({ data }: { data: FlowNodeData }) {
+  const condition = data.condition || data.label || 'IF';
+  const cleanCondition = condition.replace(/\s*(THEN|BEGIN)\s*$/i, '').trim();
+
   return (
-    <div className="relative">
+    <div className="relative flex flex-col items-center">
       <Handle type="target" position={Position.Top} className="!bg-amber-600 !w-2 !h-2" />
-      <div className="w-32 h-20 rotate-45 border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/40 shadow-sm flex items-center justify-center">
-        <div className="-rotate-45 text-center px-1 max-w-[110px]">
-          <GitBranch className="w-3.5 h-3.5 mx-auto text-amber-600 mb-0.5" />
-          <p className="text-[9px] font-mono text-amber-800 dark:text-amber-300 leading-tight truncate">
-            {data.condition || data.label || 'IF'}
+
+      {/* Diamond shape */}
+      <div className="w-28 h-28 rotate-45 border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/40 shadow-md" />
+
+      {/* Condition text overlaid (not rotated) */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="text-center px-3 max-w-[120px]">
+          <GitBranch className="w-3 h-3 mx-auto text-amber-500 mb-0.5 opacity-50" />
+          <p className="text-[9px] font-mono text-amber-800 dark:text-amber-300 leading-tight break-words" title={cleanCondition}>
+            {cleanCondition.length > 30 ? cleanCondition.slice(0, 30) + '..' : cleanCondition}
           </p>
         </div>
       </div>
+
+      {/* Handles only — no labels inside, edge labels handle TRUE/FALSE */}
       <Handle type="source" position={Position.Bottom} id="default" className="!bg-amber-600 !w-2 !h-2" />
-      <Handle type="source" position={Position.Right} id="true" className="!bg-emerald-500 !w-2 !h-2" />
-      <Handle type="source" position={Position.Left} id="false" className="!bg-red-500 !w-2 !h-2" />
+      <Handle type="source" position={Position.Right} id="true" className="!bg-emerald-500 !w-2.5 !h-2.5" />
+      <Handle type="source" position={Position.Left} id="false" className="!bg-red-500 !w-2.5 !h-2.5" />
     </div>
   );
 });
@@ -136,17 +146,21 @@ export const LoopNode = memo(function LoopNode({ data }: { data: FlowNodeData })
 export const CallNode = memo(function CallNode({ data }: { data: FlowNodeData }) {
   const target = data.targetProcedure || data.label;
   return (
-    <div
-      className="rounded-lg border-2 border-brand-500 bg-brand-50 dark:bg-brand-950/30 px-3 py-2 min-w-[160px] max-w-[260px] shadow-sm ring-2 ring-brand-200 dark:ring-brand-800 cursor-pointer hover:ring-brand-400 transition-all"
-      onDoubleClick={() => data.onDrillDown?.(target)}
-    >
+    <div className="rounded-lg border-2 border-brand-500 bg-brand-50 dark:bg-brand-950/30 px-3 py-2 min-w-[160px] max-w-[260px] shadow-md ring-2 ring-brand-200 dark:ring-brand-800 transition-all">
       <Handle type="target" position={Position.Top} className="!bg-brand-600 !w-2 !h-2" />
       <div className="flex items-center gap-1.5">
         <PhoneCall className="w-3.5 h-3.5 text-brand-500 flex-shrink-0" />
         <span className={cn('text-[9px] font-bold uppercase px-1.5 py-0.5 rounded', OP_BADGE.EXEC)}>EXEC</span>
       </div>
       <p className="text-[11px] font-mono font-medium text-brand-700 dark:text-brand-300 mt-1 truncate">{target}</p>
-      <p className="text-[8px] text-brand-400 mt-0.5">Double-click to open</p>
+      {data.onDrillDown && (
+        <button
+          onClick={(e) => { e.stopPropagation(); data.onDrillDown!(target); }}
+          className="mt-1.5 w-full text-[9px] px-2 py-1 rounded bg-brand-500 text-white hover:bg-brand-600 transition-colors cursor-pointer font-medium"
+        >
+          Abrir procedimiento
+        </button>
+      )}
       <Handle type="source" position={Position.Bottom} className="!bg-brand-600 !w-2 !h-2" />
     </div>
   );
@@ -156,14 +170,15 @@ export const CallNode = memo(function CallNode({ data }: { data: FlowNodeData })
 
 export const ErrorHandlerNode = memo(function ErrorHandlerNode({ data }: { data: FlowNodeData }) {
   return (
-    <div className="rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/30 px-3 py-2 min-w-[160px] max-w-[260px] shadow-sm">
+    <div className="relative rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/30 px-3 py-2 min-w-[160px] max-w-[260px] shadow-sm">
       <Handle type="target" position={Position.Top} className="!bg-blue-600 !w-2 !h-2" />
       <div className="flex items-center gap-1.5">
         <ShieldAlert className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
         <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-500 text-white">TRY / CATCH</span>
       </div>
       <p className="text-[10px] text-surface-600 dark:text-surface-400 mt-1 truncate">{data.label}</p>
-      <Handle type="source" position={Position.Bottom} className="!bg-blue-600 !w-2 !h-2" />
+      <Handle type="source" position={Position.Bottom} id="try" className="!bg-blue-600 !w-2 !h-2" />
+      <Handle type="source" position={Position.Right} id="catch" className="!bg-red-400 !w-2 !h-2" />
     </div>
   );
 });
@@ -174,9 +189,11 @@ export const StatementNode = memo(function StatementNode({ data }: { data: FlowN
   const [showSql, setShowSql] = useState(false);
   const op = data.operation || '';
   const tables = data.tables || [];
+  const varsWritten = data.varsWritten || [];
+  const isGrouped = (op === 'DECLARE' || op === 'SET') && varsWritten.length > 1;
 
   return (
-    <div className={cn('rounded-lg border-2 px-3 py-2 min-w-[160px] max-w-[280px] shadow-sm', OP_BG[op] || DEFAULT_BG)}>
+    <div className={cn('rounded-lg border-2 px-3 py-2 min-w-[160px] max-w-[300px] shadow-sm', OP_BG[op] || DEFAULT_BG)}>
       <Handle type="target" position={Position.Top} className="!bg-surface-500 !w-2 !h-2" />
 
       <div className="flex items-center justify-between gap-1.5">
@@ -195,9 +212,20 @@ export const StatementNode = memo(function StatementNode({ data }: { data: FlowN
         )}
       </div>
 
-      <p className="text-[10px] font-mono text-surface-700 dark:text-surface-300 mt-1 truncate" title={data.label}>
-        {data.label}
-      </p>
+      {/* Grouped variables (DECLARE/SET with multiple vars) */}
+      {isGrouped ? (
+        <div className="flex flex-wrap gap-0.5 mt-1">
+          {varsWritten.map((v: string) => (
+            <span key={v} className="text-[8px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-600 dark:text-purple-400 font-mono font-medium">
+              {v}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[10px] font-mono text-surface-700 dark:text-surface-300 mt-1 truncate" title={data.label}>
+          {data.label}
+        </p>
+      )}
 
       {tables.length > 0 && (
         <div className="flex flex-wrap gap-0.5 mt-1">
@@ -211,13 +239,21 @@ export const StatementNode = memo(function StatementNode({ data }: { data: FlowN
       )}
 
       {showSql && data.sqlSnippet && (
-        <pre className="mt-1.5 text-[8px] font-mono bg-surface-900 text-surface-200 p-1.5 rounded overflow-x-auto max-h-16 whitespace-pre-wrap">
+        <pre className="mt-1.5 text-[8px] font-mono bg-surface-900 text-surface-200 p-1.5 rounded overflow-auto max-h-12 max-w-[260px] whitespace-pre-wrap">
           {data.sqlSnippet}
         </pre>
       )}
 
       <Handle type="source" position={Position.Bottom} className="!bg-surface-500 !w-2 !h-2" />
     </div>
+  );
+});
+
+/* ── Loop Background (visual wrapper for WHILE/FOR body) ── */
+
+export const LoopBackgroundNode = memo(function LoopBackgroundNode() {
+  return (
+    <div className="w-full h-full rounded-2xl border-2 border-dashed border-purple-300/60 bg-purple-50/15 dark:bg-purple-900/10" />
   );
 });
 
@@ -231,4 +267,5 @@ export const nodeTypes = {
   loop: LoopNode,
   call: CallNode,
   error_handler: ErrorHandlerNode,
+  loopBackground: LoopBackgroundNode,
 };

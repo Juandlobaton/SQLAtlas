@@ -120,7 +120,9 @@ const ORM_ENTITIES = [
         password: config.getOrThrow('DB_PASSWORD'),
         database: config.get('DB_DATABASE', 'sqlatlas'),
         entities: ORM_ENTITIES,
-        synchronize: config.get('NODE_ENV') === 'development',
+        synchronize: false,
+        migrationsRun: true,
+        migrations: [__dirname + '/infrastructure/persistence/migrations/*{.ts,.js}'],
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),
@@ -201,7 +203,7 @@ const ORM_ENTITIES = [
       provide: PARSING_ENGINE,
       useFactory: (config: ConfigService) =>
         new HttpParsingEngine(
-          config.get('PARSING_ENGINE_URL', 'http://localhost:8100'),
+          config.get('PARSING_ENGINE_URL', 'http://localhost:9300'),
           config.get('PARSING_ENGINE_API_KEY', ''),
         ),
       inject: [ConfigService],
@@ -308,11 +310,12 @@ const ORM_ENTITIES = [
     },
     {
       provide: StartAnalysisUseCase,
-      useFactory: (connRepo: any, jobRepo: any, procRepo: any, depRepo: any, tableAccessRepo: any, discoveredTableRepo: any, auditRepo: any, dbConnector: any, parsingEngine: any, credService: any, cache: ICacheService) =>
-        new StartAnalysisUseCase(connRepo, jobRepo, procRepo, depRepo, tableAccessRepo, discoveredTableRepo, auditRepo, dbConnector, parsingEngine, credService, cache),
+      useFactory: (connRepo: any, jobRepo: any, procRepo: any, depRepo: any, tableAccessRepo: any, discoveredTableRepo: any, discoveredSchemaRepo: any, auditRepo: any, dbConnector: any, parsingEngine: any, credService: any, cache: ICacheService) =>
+        new StartAnalysisUseCase(connRepo, jobRepo, procRepo, depRepo, tableAccessRepo, discoveredTableRepo, discoveredSchemaRepo, auditRepo, dbConnector, parsingEngine, credService, cache),
       inject: [
         CONNECTION_REPOSITORY, ANALYSIS_JOB_REPOSITORY, PROCEDURE_REPOSITORY,
         DEPENDENCY_REPOSITORY, TABLE_ACCESS_REPOSITORY, DISCOVERED_TABLE_REPOSITORY,
+        DISCOVERED_SCHEMA_REPOSITORY,
         AUDIT_LOG_REPOSITORY, DB_CONNECTOR, PARSING_ENGINE, CREDENTIAL_SERVICE, CACHE_SERVICE,
       ],
     },

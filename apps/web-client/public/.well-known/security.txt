@@ -1,0 +1,4 @@
+Contact: https://github.com/YOUR_USER/sqlatlas/security/advisories
+Preferred-Languages: en, es
+Canonical: https://sqlatlas.netlify.app/.well-known/security.txt
+Expires: 2027-04-09T00:00:00.000Z

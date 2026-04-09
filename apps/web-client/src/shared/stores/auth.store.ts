@@ -126,6 +126,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Best-effort — cookies cleared server-side
     }
     localStorage.removeItem('session_user');
+    localStorage.removeItem('sqlatlas-studio');
     set({ user: null, isAuthenticated: false });
   },
 

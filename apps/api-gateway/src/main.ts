@@ -16,7 +16,7 @@ async function bootstrap() {
   app.use(helmet());
   app.use(cookieParser());
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5173'],
+    origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:9100'],
     credentials: true,
   });
 
@@ -57,7 +57,7 @@ async function bootstrap() {
   }
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   console.log(`SQLAtlas API Gateway running on port ${port}`);
   console.log(`API: http://localhost:${port}/${prefix}`);

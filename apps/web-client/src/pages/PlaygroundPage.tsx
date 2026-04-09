@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Play, Shield, GitBranch, Table2, Workflow, AlertTriangle, ChevronDown, Copy, Check,
-  Database, Search, Loader2, Code,
+  Loader2, Code,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { parserApi, type ParseResponse } from '@/shared/lib/api-client';
@@ -12,6 +12,11 @@ import { useStudioContext } from '@/shared/hooks/useStudioContext';
 import { useProcedures, type ProcedureItem } from '@/shared/hooks/useAnalysis';
 import { FlowTreeView } from '@/features/visualization/components/FlowTreeView';
 import type { FlowTreeNode } from '@/features/visualization/types/flow-tree';
+import { ModuleToolbar } from '@/shared/components/layout/ModuleToolbar';
+import { ModulePageLayout } from '@/shared/components/layout/ModulePageLayout';
+import { SidePanel } from '@/shared/components/layout/SidePanel';
+import { SidePanelSearch } from '@/shared/components/SidePanelSearch';
+import { ConnectionSelector } from '@/shared/components/ConnectionSelector';
 
 const SAMPLE_SQL = `CREATE PROCEDURE dbo.sp_ProcessOrder
   @OrderId INT,
@@ -76,9 +81,8 @@ export function PlaygroundPage() {
   const [copied, setCopied] = useState(false);
 
   // Procedure picker state
-  const { connectionId, setConnectionId, connections } = useGlobalConnection();
+  const { connectionId } = useGlobalConnection();
   const [procSearch, setProcSearch] = useState('');
-  const [showProcPicker, setShowProcPicker] = useState(!urlConnectionId);
 
   const { data: procData, isLoading: procsLoading } = useProcedures(
     connectionId,
@@ -113,8 +117,6 @@ export function PlaygroundPage() {
     const newDialect = dialectMap[proc.language] || dialect;
     setSql(proc.rawDefinition);
     setDialect(newDialect);
-    setShowProcPicker(false);
-
     // Abort previous parse
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -178,117 +180,85 @@ export function PlaygroundPage() {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Compact toolbar */}
-      <div className="h-10 flex-none flex items-center justify-between px-3 border-b border-surface-200 bg-surface-50/80">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-2">
-            <Code className="w-4 h-4 text-brand-500 flex-shrink-0" />
-            <span className="text-sm font-semibold truncate">{t('playground:title')}</span>
-          </div>
-          <span className="text-[10px] text-surface-400 hidden sm:inline">{t('playground:subtitle')}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={dialect}
-            onChange={(e) => setDialect(e.target.value)}
-            className="input w-40 text-xs h-7"
-          >
-            <option value="tsql">{t('common:dialects.tsql')}</option>
-            <option value="postgres">{t('common:dialects.plpgsql')}</option>
-            <option value="oracle">{t('common:dialects.plsql')}</option>
-          </select>
-          <button onClick={handleParse} disabled={loading || !sql.trim()} className="btn-primary text-xs h-7 px-3">
-            <Play className="w-3.5 h-3.5" />
-            {loading ? t('common:analyzing') : t('common:analyze')}
-          </button>
-        </div>
-      </div>
-
-      {/* Procedure picker */}
-      <div className="border-b border-surface-200 bg-surface-50 dark:bg-surface-100/30">
-        <button
-          onClick={() => setShowProcPicker(!showProcPicker)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-surface-600 hover:bg-surface-100 transition-colors"
-        >
-          <span className="flex items-center gap-2">
-            <Database className="w-4 h-4" />
-            {t('playground:procPicker.title')}
-          </span>
-          <ChevronDown className={cn('w-4 h-4 transition-transform', showProcPicker && 'rotate-180')} />
-        </button>
-
-        {showProcPicker && (
-          <div className="px-4 pb-3 border-t border-surface-200">
-            <div className="flex items-center gap-3 mt-3">
-              {/* Connection selector */}
+    <ModulePageLayout
+      toolbar={
+        <ModuleToolbar
+          icon={Code}
+          title={t('playground:title')}
+          subtitle={t('playground:subtitle')}
+          actions={
+            <>
+              <ConnectionSelector />
               <select
-                value={connectionId || ''}
-                onChange={(e) => setConnectionId(e.target.value || null)}
-                className="input w-48 text-xs"
+                value={dialect}
+                onChange={(e) => setDialect(e.target.value)}
+                className="input w-40 text-xs h-7"
               >
-                <option value="">{t('playground:procPicker.selectConnection')}</option>
-                {connections.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
+                <option value="tsql">{t('common:dialects.tsql')}</option>
+                <option value="postgres">{t('common:dialects.plpgsql')}</option>
+                <option value="oracle">{t('common:dialects.plsql')}</option>
               </select>
-
-              {/* Procedure search */}
-              {connectionId && (
-                <div className="relative flex-1 max-w-xs">
-                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-400" />
-                  <input
-                    className="input pl-8 text-xs"
-                    placeholder={t('playground:procPicker.searchPlaceholder')}
-                    value={procSearch}
-                    onChange={(e) => setProcSearch(e.target.value)}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Procedure list */}
-            {connectionId && (
-              <div className="mt-3 max-h-48 overflow-y-auto rounded-lg border border-surface-200">
-                {procsLoading ? (
-                  <div className="flex items-center justify-center py-6">
-                    <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
-                  </div>
-                ) : procedures.length === 0 ? (
-                  <div className="text-center py-6 text-xs text-surface-400">
-                    {t('playground:procPicker.noResults')}
-                  </div>
-                ) : (
-                  <div className="divide-y divide-surface-200">
-                    {procedures.map((proc) => (
-                      <button
-                        key={proc.id}
-                        onClick={() => handleLoadProcedure(proc)}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-xs hover:bg-surface-100 transition-colors text-left"
-                      >
-                        <Workflow className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <span className="font-mono font-medium truncate block">{proc.objectName}</span>
-                          <span className="text-[10px] text-surface-400">{proc.schemaName} · {proc.objectType} · {proc.lineCount} {t('playground:procPicker.lines')}</span>
-                        </div>
-                        {proc.estimatedComplexity != null && proc.estimatedComplexity > 10 && (
-                          <span title={t('common:tooltips.cc')} className="text-[9px] px-1 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 cursor-help">
-                            CC={proc.estimatedComplexity}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <button onClick={handleParse} disabled={loading || !sql.trim()} className="btn-primary text-xs h-7 px-3">
+                <Play className="w-3.5 h-3.5" />
+                {loading ? t('common:analyzing') : t('common:analyze')}
+              </button>
+            </>
+          }
+        />
+      }
+      sidebar={
+        <SidePanel>
+          <SidePanelSearch
+            value={procSearch}
+            onChange={setProcSearch}
+            placeholder={t('playground:procPicker.searchPlaceholder')}
+          />
+          <div className="flex-1 overflow-y-auto">
+            {procsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
               </div>
+            ) : procedures.length === 0 ? (
+              <div className="p-4 text-center text-surface-400 text-xs">
+                {connectionId ? t('playground:procPicker.noResults') : t('playground:procPicker.selectConnection')}
+              </div>
+            ) : (
+              procedures.map((proc) => (
+                <button
+                  key={proc.id}
+                  onClick={() => handleLoadProcedure(proc)}
+                  className={cn(
+                    'w-full flex items-center justify-between px-3 py-2 text-xs border-b border-surface-200/30 hover:bg-surface-100/60 transition-all cursor-pointer',
+                    sql === proc.rawDefinition && 'bg-brand-500/8 border-l-2 border-l-brand-500',
+                  )}
+                >
+                  <div className="min-w-0 text-left">
+                    <p className="font-mono font-medium truncate text-[12px]">{proc.objectName}</p>
+                    <p className="text-2xs text-surface-500">{proc.schemaName} / {proc.objectType} / {proc.lineCount}L</p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+                    {proc.estimatedComplexity != null && (
+                      <span title={t('common:tooltips.cc')} className={cn('text-2xs px-1.5 py-0.5 rounded-md font-bold cursor-help',
+                        proc.estimatedComplexity <= 5 ? 'badge-success' :
+                        proc.estimatedComplexity <= 10 ? 'badge-medium' :
+                        proc.estimatedComplexity <= 20 ? 'badge-high' : 'badge-critical')}>
+                        CC={proc.estimatedComplexity}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              ))
             )}
           </div>
-        )}
-      </div>
-
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-0">
+          <div className="p-2 border-t border-surface-200/60 text-2xs text-surface-400 text-center">
+            {procedures.length} {t('playground:procPicker.results', { defaultValue: 'procedures' })}
+          </div>
+        </SidePanel>
+      }
+    >
+      <div className="h-full grid grid-cols-1 lg:grid-cols-2 min-h-0 overflow-hidden">
         {/* Editor */}
-        <div className="card flex flex-col min-h-[400px]">
+        <div className="card flex flex-col min-h-0 overflow-hidden">
           <div className="px-4 py-2 border-b border-surface-200 flex items-center justify-between">
             <span className="text-xs font-medium text-surface-500">{t('playground:sqlInput')}</span>
             <span className="text-xs text-surface-400">
@@ -306,7 +276,7 @@ export function PlaygroundPage() {
         </div>
 
         {/* Results */}
-        <div className="card flex flex-col min-h-[400px]">
+        <div className="card flex flex-col min-h-0 overflow-hidden">
           {!result ? (
             <div className="flex-1 flex items-center justify-center text-surface-400">
               <div className="text-center">
@@ -418,7 +388,7 @@ export function PlaygroundPage() {
                       <p className="text-sm text-surface-400">{t('playground:empty.tables')}</p>
                     ) : (
                       tables.map((tbl, i) => (
-                        <div key={`tbl-${(tbl.fullName as string) || i}`} className="flex items-center gap-3 p-3 rounded-lg bg-surface-100">
+                        <div key={`tbl-${i}-${(tbl.fullName as string)}`} className="flex items-center gap-3 p-3 rounded-lg bg-surface-100">
                           <Table2 className="w-4 h-4 text-cyan-500 flex-shrink-0" />
                           <span className="text-sm font-mono flex-1">{tbl.fullName as string}</span>
                           <span className={cn(
@@ -676,7 +646,7 @@ export function PlaygroundPage() {
           )}
         </div>
       </div>
-    </div>
+    </ModulePageLayout>
   );
 }
 

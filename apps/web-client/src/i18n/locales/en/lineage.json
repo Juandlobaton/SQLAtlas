@@ -24,7 +24,9 @@
     "fix": "Fix: {{recommendation}}",
     "sourceCode": "Source Code",
     "openInExplorer": "Open in SQL Explorer",
-    "openInFlow": "View in Flow Analysis"
+    "openInFlow": "View in Flow Analysis",
+    "depsCount_one": "{{count}} dependency",
+    "depsCount_other": "{{count}} dependencies"
   },
   "lineageView": {
     "selectToViewLineage": "Select a procedure to view lineage",
@@ -32,9 +34,11 @@
     "upstream": "Callers (upstream)",
     "noCallers": "No callers found",
     "selected": "Selected",
-    "executionFlow": "Execution Flow",
     "downstream": "Called (downstream)",
-    "noDeps": "No dependencies found"
+    "noDeps": "No dependencies found",
+    "searchProcedures": "Filter procedures...",
+    "calledProcedures": "Called Procedures",
+    "tableOperations": "Table Operations"
   },
   "matrix": {
     "procedureFunction": "Procedure / Function",
@@ -53,6 +57,10 @@
     "deps_one": "{{count}} dependency",
     "deps_other": "{{count}} dependencies",
     "description": "The following procedures/functions depend on this object:",
-    "confidence": "confidence {{pct}}%"
+    "confidence": "confidence {{pct}}%",
+    "searchObjects": "Filter objects...",
+    "filterAll": "All",
+    "incomingDeps": "Depends on this object",
+    "outgoingDeps": "This object depends on"
   }
 }

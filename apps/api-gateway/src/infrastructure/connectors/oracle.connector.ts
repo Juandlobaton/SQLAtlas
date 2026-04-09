@@ -59,6 +59,8 @@ export class OracleConnector implements IDbConnector {
 
   async extractProcedures(config: ConnectionConfig, schemas?: string[]): Promise<ExtractedObject[]> {
     const oracledb = await this.loadDriver();
+    // Fetch CLOBs as strings instead of Lob objects (avoids circular ref in JSON.stringify)
+    oracledb.fetchAsString = [oracledb.CLOB];
     const conn = await oracledb.getConnection({
       user: config.username,
       password: config.password,
@@ -78,7 +80,7 @@ export class OracleConnector implements IDbConnector {
 
       const result = await conn.execute(
         `SELECT s.owner, s.name, s.type,
-           LISTAGG(s.text, '') WITHIN GROUP (ORDER BY s.line) AS definition
+           RTRIM(XMLAGG(XMLELEMENT(e, s.text, '').EXTRACT('//text()') ORDER BY s.line).GetClobVal(), CHR(0)) AS definition
          FROM all_source s
          WHERE ${ownerFilter}
            AND s.type IN ('PROCEDURE', 'FUNCTION', 'TRIGGER', 'PACKAGE BODY')
