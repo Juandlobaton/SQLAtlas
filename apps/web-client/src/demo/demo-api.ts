@@ -250,6 +250,27 @@ export async function demoFetch(path: string, _options?: RequestInit): Promise<R
     body = { status: 'healthy', service: 'parsing-engine-demo', version: '0.1.0' };
   }
 
+  // GET /analysis/dashboard
+  else if (segments[0] === 'analysis' && segments[1] === 'dashboard') {
+    const recentJobs = data.analysisJobs.slice(0, 5).map((j: any) => {
+      const conn = data.connections.find((c: any) => c.id === j.connectionId);
+      return {
+        id: j.id, connectionId: j.connectionId,
+        connectionName: conn?.name || 'Unknown', engine: conn?.engine || 'unknown',
+        status: j.status, progress: j.progress,
+        totalObjects: j.totalObjects, createdAt: j.createdAt,
+      };
+    });
+    body = ok({
+      connections: data.connections.length,
+      procedures: data.procedures.length,
+      securityIssues: data.procedures.reduce(
+        (sum: number, p: any) => sum + (p.securityFindings?.length || 0), 0,
+      ),
+      recentJobs,
+    });
+  }
+
   // POST /analysis/start — noop in demo
   else if (segments[0] === 'analysis' && segments[1] === 'start') {
     body = ok({ jobId: 'demo-job', message: 'Demo mode — analysis already pre-loaded' });
