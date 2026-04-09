@@ -10,10 +10,13 @@ from __future__ import annotations
 import logging
 import re
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from src.domain.entities.flow_node import FlowNode
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -230,9 +233,9 @@ class FlowBuilderBase(ABC):
         parent = frame.node
         if frame.target_list == "children":
             return parent.children
-        elif frame.target_list == "true_branch":
+        if frame.target_list == "true_branch":
             return parent.true_branch.children if parent.true_branch else []
-        elif frame.target_list == "false_branch":
+        if frame.target_list == "false_branch":
             return parent.false_branch.children if parent.false_branch else []
         return []
 
@@ -241,13 +244,14 @@ class FlowBuilderBase(ABC):
         i = start_idx + 1
         while i < len(self._lines):
             line = self._lines[i].strip()
-            if not line or line.startswith("--") or line.startswith("/*"):
+            if not line or line.startswith(("--", "/*")):
                 i += 1
                 continue
             upper = line.upper()
             if _CONTROL_KEYWORDS.match(line):
                 break
-            if upper.rstrip(";").strip() in ("END", "END TRY", "END CATCH", "END LOOP", "END IF", ")"):
+            end_kws = ("END", "END TRY", "END CATCH", "END LOOP", "END IF", ")")
+            if upper.rstrip(";").strip() in end_kws:
                 break
             lines_acc.append(line)
             i += 1
@@ -291,7 +295,7 @@ class FlowBuilderBase(ABC):
         upper = stripped.upper()
         line_num = line_idx + 1
 
-        if not stripped or stripped.startswith("--") or stripped.startswith("/*"):
+        if not stripped or stripped.startswith(("--", "/*")):
             return line_idx + 1
 
         for handler in self._handler_chain:
@@ -303,7 +307,9 @@ class FlowBuilderBase(ABC):
 
     # ── Shared control flow handlers ──
 
-    def _handle_elsif_or_elseif(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_elsif_or_elseif(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\b(?:ELSE\s+IF|ELSIF)\b", upper):
             return None
 
@@ -358,7 +364,9 @@ class FlowBuilderBase(ABC):
             ))
         return line_idx + 1
 
-    def _handle_else(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_else(self, line_idx: int, _stripped: str,
+
+            upper: str, _line_num: int) -> int | None:
         if not re.match(r"\bELSE\b", upper) or re.match(r"\bELSE\s+IF\b", upper):
             return None
 
@@ -369,7 +377,10 @@ class FlowBuilderBase(ABC):
         has_begin = upper.rstrip().endswith("BEGIN")
         if not has_begin:
             next_begin = self._peek_next_meaningful(line_idx + 1)
-            has_begin = next_begin is not None and self._lines[next_begin].strip().upper() == "BEGIN"
+            has_begin = (
+                next_begin is not None
+                and self._lines[next_begin].strip().upper() == "BEGIN"
+            )
             if has_begin:
                 self._stack.append(StackFrame(
                     node=if_node, block_type="if_false",
@@ -389,7 +400,9 @@ class FlowBuilderBase(ABC):
             ))
         return line_idx + 1
 
-    def _handle_if(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_if(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bIF\b", upper):
             return None
         if re.match(r"\bIF\s+EXISTS\b", upper) or re.match(r"\bELSIF\b", upper):
@@ -431,7 +444,9 @@ class FlowBuilderBase(ABC):
             ))
         return line_idx + 1
 
-    def _handle_if_exists(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_if_exists(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bIF\s+EXISTS\b", upper):
             return None
 
@@ -451,7 +466,10 @@ class FlowBuilderBase(ABC):
         has_begin = upper.rstrip().endswith("BEGIN")
         if not has_begin:
             next_begin = self._peek_next_meaningful(end_idx + 1)
-            has_begin = next_begin is not None and self._lines[next_begin].strip().upper() == "BEGIN"
+            has_begin = (
+                next_begin is not None
+                and self._lines[next_begin].strip().upper() == "BEGIN"
+            )
             if has_begin:
                 self._stack.append(StackFrame(
                     node=node, block_type="if_true",
@@ -471,7 +489,9 @@ class FlowBuilderBase(ABC):
             ))
         return end_idx + 1
 
-    def _handle_while_for(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_while_for(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\b(WHILE|FOR)\b", upper):
             return None
 
@@ -508,7 +528,9 @@ class FlowBuilderBase(ABC):
         ))
         return line_idx + 1
 
-    def _handle_end_generic(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_end_generic(self, line_idx: int, _stripped: str,
+
+            upper: str, _line_num: int) -> int | None:
         if not re.match(r"\bEND\b", upper):
             return None
         if re.match(r"\bEND\s+(TRY|CATCH|IF|LOOP)\b", upper):
@@ -533,10 +555,14 @@ class FlowBuilderBase(ABC):
                 break
         return line_idx + 1
 
-    def _handle_begin_standalone(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
-        if not (upper == "BEGIN" or (
-            upper.startswith("BEGIN") and not re.match(r"\bBEGIN\s+(TRY|CATCH|TRAN|TRANSACTION)\b", upper)
-        )):
+    def _handle_begin_standalone(self, line_idx: int,
+            _stripped: str, upper: str,
+            _line_num: int) -> int | None:
+        _begin_re = r"\bBEGIN\s+(TRY|CATCH|TRAN|TRANSACTION)\b"
+        if not (
+            upper == "BEGIN"
+            or (upper.startswith("BEGIN") and not re.match(_begin_re, upper))
+        ):
             return None
 
         if len(self._stack) > 0 and self._current_frame().block_type == "root":
@@ -564,22 +590,34 @@ class FlowBuilderBase(ABC):
         self._append_node(node)
         return end_idx + 1
 
-    def _handle_insert(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_insert(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         return self._handle_dml(line_idx, stripped, upper, line_num, "INSERT", "INSERT")
 
-    def _handle_update(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_update(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         return self._handle_dml(line_idx, stripped, upper, line_num, "UPDATE", "UPDATE")
 
-    def _handle_delete(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_delete(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         return self._handle_dml(line_idx, stripped, upper, line_num, "DELETE", "DELETE")
 
-    def _handle_merge(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_merge(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         return self._handle_dml(line_idx, stripped, upper, line_num, "MERGE", "MERGE")
 
-    def _handle_select_assignment(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_select_assignment(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bSELECT\b", upper):
             return None
-        if not (_SELECT_ASSIGN_PATTERN.search(stripped) or _SELECT_INTO_VAR_PATTERN.search(stripped)):
+        has_assign = _SELECT_ASSIGN_PATTERN.search(stripped)
+        has_into = _SELECT_INTO_VAR_PATTERN.search(stripped)
+        if not (has_assign or has_into):
             return None
 
         full_text, end_idx = self._accumulate_statement(line_idx)
@@ -602,7 +640,9 @@ class FlowBuilderBase(ABC):
         self._append_node(node)
         return end_idx + 1
 
-    def _handle_exec_call(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_exec_call(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\b(EXEC|EXECUTE|CALL|PERFORM)\b", upper):
             return None
 
@@ -621,7 +661,9 @@ class FlowBuilderBase(ABC):
         self._append_node(node)
         return end_idx + 1
 
-    def _handle_select(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_select(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not (re.match(r"\bSELECT\s+.*\bINTO\b", upper) or re.match(r"\bSELECT\b", upper)):
             return None
 
@@ -638,7 +680,9 @@ class FlowBuilderBase(ABC):
         self._append_node(node)
         return end_idx + 1
 
-    def _handle_return(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_return(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bRETURN\b", upper):
             return None
         vars_read = self._vars(stripped)
@@ -650,7 +694,9 @@ class FlowBuilderBase(ABC):
         self._append_node(node)
         return line_idx + 1
 
-    def _handle_declare_cursor(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_declare_cursor(self, line_idx: int, stripped: str,
+
+            _upper: str, line_num: int) -> int | None:
         if not _DECLARE_CURSOR_PATTERN.match(stripped):
             return None
         full_text, end_idx = self._accumulate_statement(line_idx)
@@ -666,7 +712,9 @@ class FlowBuilderBase(ABC):
         self._append_node(node)
         return end_idx + 1
 
-    def _handle_declare(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_declare(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bDECLARE\b", upper):
             return None
         full_text, end_idx = self._accumulate_statement(line_idx)
@@ -694,7 +742,9 @@ class FlowBuilderBase(ABC):
         self._append_node(node)
         return end_idx + 1
 
-    def _handle_set(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_set(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bSET\b", upper):
             return None
         full_text, end_idx = self._accumulate_statement(line_idx)
@@ -726,10 +776,17 @@ class FlowBuilderBase(ABC):
         self._append_node(node)
         return end_idx + 1
 
-    def _handle_transaction(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_transaction(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\b(BEGIN\s+TRAN(?:SACTION)?|COMMIT|ROLLBACK|SAVE\s+TRAN)\b", upper):
             return None
-        op = "COMMIT" if "COMMIT" in upper else "ROLLBACK" if "ROLLBACK" in upper else "BEGIN TRANSACTION"
+        if "COMMIT" in upper:
+            op = "COMMIT"
+        elif "ROLLBACK" in upper:
+            op = "ROLLBACK"
+        else:
+            op = "BEGIN TRANSACTION"
         node = FlowNode(
             node_id=self._next_id(), node_type="statement",
             label=stripped[:120], line_number=line_num,
@@ -738,7 +795,9 @@ class FlowBuilderBase(ABC):
         self._append_node(node)
         return line_idx + 1
 
-    def _handle_cursor_ops(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_cursor_ops(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\b(OPEN|CLOSE|FETCH|DEALLOCATE)\b", upper):
             return None
         full_text, end_idx = self._accumulate_statement(line_idx)
@@ -753,7 +812,9 @@ class FlowBuilderBase(ABC):
         self._append_node(node)
         return end_idx + 1
 
-    def _handle_truncate(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_truncate(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bTRUNCATE\b", upper):
             return None
         tables = _extract_tables(stripped)

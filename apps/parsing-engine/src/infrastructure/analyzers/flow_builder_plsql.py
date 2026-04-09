@@ -6,11 +6,14 @@ Extends ANSI engine with Oracle-specific constructs: FORALL bulk DML.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from src.domain.entities.flow_node import FlowNode
 from src.infrastructure.analyzers.flow_builder_ansi import AnsiFlowEngine
 from src.infrastructure.analyzers.flow_builder_base import _extract_tables
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class PlsqlFlowEngine(AnsiFlowEngine):
@@ -32,7 +35,9 @@ class PlsqlFlowEngine(AnsiFlowEngine):
 
     # ── Oracle-specific handlers ──
 
-    def _handle_forall(self, line_idx: int, stripped: str, upper: str, line_num: int) -> int | None:
+    def _handle_forall(self, line_idx: int, stripped: str,
+
+            upper: str, line_num: int) -> int | None:
         if not re.match(r"\bFORALL\b", upper):
             return None
         full_text, end_idx = self._accumulate_statement(line_idx)
