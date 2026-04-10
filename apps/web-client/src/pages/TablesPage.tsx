@@ -14,6 +14,7 @@ import { ModulePageLayout } from '@/shared/components/layout/ModulePageLayout';
 import { SidePanel } from '@/shared/components/layout/SidePanel';
 import { SidePanelSearch } from '@/shared/components/SidePanelSearch';
 import { ConnectionSelector } from '@/shared/components/ConnectionSelector';
+import { Dropdown } from '@/shared/components/Dropdown';
 import { EmptyState } from '@/shared/components/EmptyState';
 
 const OP_ICON: Record<string, { icon: typeof Eye; color: string }> = {
@@ -66,10 +67,15 @@ export function TablesPage() {
           actions={
             <>
               <ConnectionSelector />
-              <select value={schemaFilter} onChange={(e) => setSchemaFilter(e.target.value)} className="input w-36 text-xs h-7">
-                <option value="">{t('tables:allSchemas')}</option>
-                {schemas.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <Dropdown
+                value={schemaFilter}
+                onChange={setSchemaFilter}
+                options={[
+                  { value: '', label: t('tables:allSchemas') },
+                  ...schemas.map(s => ({ value: s, label: s })),
+                ]}
+                className="w-[160px]"
+              />
             </>
           }
         />

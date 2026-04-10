@@ -13,6 +13,7 @@ import { useStudioContext } from '@/shared/hooks/useStudioContext';
 import { ModuleToolbar } from '@/shared/components/layout/ModuleToolbar';
 import { ModulePageLayout } from '@/shared/components/layout/ModulePageLayout';
 import { ConnectionSelector } from '@/shared/components/ConnectionSelector';
+import { Dropdown } from '@/shared/components/Dropdown';
 import { ButtonGroup } from '@/shared/components/ButtonGroup';
 import { SidePanelSearch } from '@/shared/components/SidePanelSearch';
 import { useProcedures, useDependencyGraph, type ProcedureItem, type GraphNode, type GraphEdge } from '@/shared/hooks/useAnalysis';
@@ -164,14 +165,15 @@ export function LineagePage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <select
+            <Dropdown
               value={schemaFilter}
-              onChange={(e) => setSchemaFilter(e.target.value)}
-              className="input text-xs h-7"
-            >
-              <option value="">{t('allSchemas')}</option>
-              {schemas.map(([s]) => <option key={s} value={s}>{s}</option>)}
-            </select>
+              onChange={setSchemaFilter}
+              options={[
+                { value: '', label: t('allSchemas') },
+                ...schemas.map(([s]) => ({ value: s, label: s })),
+              ]}
+              className="w-[160px]"
+            />
           </div>
         </ModuleToolbar>
       }

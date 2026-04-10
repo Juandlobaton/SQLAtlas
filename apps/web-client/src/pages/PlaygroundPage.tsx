@@ -12,6 +12,7 @@ import { useStudioContext } from '@/shared/hooks/useStudioContext';
 import { useProcedures, type ProcedureItem } from '@/shared/hooks/useAnalysis';
 import { FlowTreeView } from '@/features/visualization/components/FlowTreeView';
 import type { FlowTreeNode } from '@/features/visualization/types/flow-tree';
+import { Dropdown } from '@/shared/components/Dropdown';
 import { ModuleToolbar } from '@/shared/components/layout/ModuleToolbar';
 import { ModulePageLayout } from '@/shared/components/layout/ModulePageLayout';
 import { SidePanel } from '@/shared/components/layout/SidePanel';
@@ -189,15 +190,16 @@ export function PlaygroundPage() {
           actions={
             <>
               <ConnectionSelector />
-              <select
+              <Dropdown
                 value={dialect}
-                onChange={(e) => setDialect(e.target.value)}
-                className="input w-40 text-xs h-7"
-              >
-                <option value="tsql">{t('common:dialects.tsql')}</option>
-                <option value="postgres">{t('common:dialects.plpgsql')}</option>
-                <option value="oracle">{t('common:dialects.plsql')}</option>
-              </select>
+                onChange={setDialect}
+                options={[
+                  { value: 'tsql', label: t('common:dialects.tsql') },
+                  { value: 'postgres', label: t('common:dialects.plpgsql') },
+                  { value: 'oracle', label: t('common:dialects.plsql') },
+                ]}
+                className="w-[200px]"
+              />
               <button onClick={handleParse} disabled={loading || !sql.trim()} className="btn-primary text-xs h-7 px-3">
                 <Play className="w-3.5 h-3.5" />
                 {loading ? t('common:analyzing') : t('common:analyze')}

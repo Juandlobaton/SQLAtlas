@@ -288,7 +288,7 @@ export function FlowPage() {
     if (!tree) return <div className="flex items-center justify-center h-full text-surface-400"><p className="text-xs">{t('flow:parseError')}</p></div>;
 
     return (
-      <div className={cn('animate-fade-in', flowViewTab === 'diagram' ? 'h-full flex flex-col' : isSplit ? 'p-3' : 'p-5')}>
+      <div className={cn('animate-fade-in', flowViewTab === 'diagram' ? 'h-full flex flex-col' : cn('overflow-y-auto h-full', isSplit ? 'p-3' : 'p-5'))}>
         {/* Header — compact in split */}
         {flowViewTab !== 'diagram' && (
           <div className={cn('pb-3 border-b border-surface-200/60', isSplit ? 'mb-3' : 'mb-5 pb-4')}>
@@ -527,11 +527,12 @@ function SplitDivider({ onDrag }: { onDrag: (deltaPct: number) => void }) {
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    const startX = e.clientX;
+    let lastX = e.clientX;
     const parentWidth = ref.current?.parentElement?.clientWidth || 1;
 
     const onMove = (ev: MouseEvent) => {
-      const delta = ((ev.clientX - startX) / parentWidth) * 100;
+      const delta = ((ev.clientX - lastX) / parentWidth) * 100;
+      lastX = ev.clientX;
       onDrag(delta);
     };
     const onUp = () => {

@@ -23,7 +23,7 @@ export function ModuleToolbar({ icon: Icon, title, subtitle, actions, children }
             </span>
           )}
         </div>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+        {actions && <div className="flex items-center gap-2 overflow-visible">{actions}</div>}
       </div>
       {children && (
         <div className="border-b border-surface-200 bg-surface-50">{children}</div>

@@ -11,7 +11,7 @@ export function ModulePageLayout({ toolbar, sidebar, children, rightPanel }: Mod
       {toolbar}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {sidebar}
-        <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{children}</div>
         {rightPanel}
       </div>
     </div>

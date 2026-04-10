@@ -13,6 +13,7 @@ import { ModuleToolbar } from '@/shared/components/layout/ModuleToolbar';
 import { ModulePageLayout } from '@/shared/components/layout/ModulePageLayout';
 import { SidePanel } from '@/shared/components/layout/SidePanel';
 import { ConnectionSelector } from '@/shared/components/ConnectionSelector';
+import { Dropdown } from '@/shared/components/Dropdown';
 import { ButtonGroup } from '@/shared/components/ButtonGroup';
 import { EmptyState } from '@/shared/components/EmptyState';
 
@@ -76,16 +77,15 @@ export function ERDiagramPage() {
   const toolbarActions = (
     <>
       <ConnectionSelector onConnectionChange={() => setSelectedTable(null)} />
-      <select
+      <Dropdown
         value={schemaFilter}
-        onChange={(e) => { setSchemaFilter(e.target.value); setSelectedTable(null); }}
-        className="input w-40 text-xs h-7"
-      >
-        <option value="">All schemas ({erData?.tables.length || 0})</option>
-        {schemas.map(([s, count]) => (
-          <option key={s} value={s}>{s} ({count})</option>
-        ))}
-      </select>
+        onChange={(v) => { setSchemaFilter(v); setSelectedTable(null); }}
+        options={[
+          { value: '', label: `All schemas (${erData?.tables.length || 0})` },
+          ...schemas.map(([s, count]) => ({ value: s, label: `${s} (${count})` })),
+        ]}
+        className="w-[180px]"
+      />
       <ButtonGroup
         value={layout}
         onChange={setLayout}
@@ -188,10 +188,10 @@ export function ERDiagramPage() {
                   >
                     <p className="text-2xs font-medium text-indigo-400">{fk.constraintName}</p>
                     <p className="text-[10px] text-surface-500 mt-0.5">
-                      {isSource ? '\u2192' : '\u2190'} {otherTable?.schemaName}.{otherTable?.tableName || '?'}
+                      {isSource ? '→' : '←'} {otherTable?.schemaName}.{otherTable?.tableName || '?'}
                     </p>
                     <p className="text-[10px] text-surface-400">
-                      ({fk.sourceColumns.join(', ')}) \u2192 ({fk.targetColumns.join(', ')})
+                      ({fk.sourceColumns.join(', ')}) → ({fk.targetColumns.join(', ')})
                     </p>
                   </button>
                 );
