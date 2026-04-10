@@ -90,6 +90,33 @@ def _detect_comment_language(sql: str) -> str:
     return best if scores[best] > 0 else "en"
 
 
+_I18N_MAP: dict[str, dict[str, str]] = {
+    "es": {
+        "Procedure": "Procedimiento", "Function": "Función",
+        "parameters": "parámetros", "table accesses": "accesos a tablas",
+        "calls": "llama a", "with": "con",
+        "reads from": "lee de", "writes to": "escribe en",
+    },
+    "pt": {
+        "Procedure": "Procedimento", "Function": "Função",
+        "parameters": "parâmetros", "table accesses": "acessos a tabelas",
+        "calls": "chama", "with": "com",
+        "reads from": "lê de", "writes to": "escreve em",
+    },
+}
+
+
+def _localize_description(desc: str, lang: str) -> str:
+    """Replace English keywords in auto-generated description."""
+    tr = _I18N_MAP.get(lang)
+    if not tr:
+        return desc
+    result = desc
+    for en, loc in tr.items():
+        result = result.replace(en, loc)
+    return result
+
+
 def _extract_header_metadata(sql: str) -> dict[str, Any]:
     """Extract structured metadata from SQL header comments."""
     metadata: dict[str, Any] = {}
@@ -438,19 +465,26 @@ class AutoDocGenerator(IDocGenerator):
         read_tables = [r.full_name for r in table_refs if r.is_read_operation()]
         write_tables = [r.full_name for r in table_refs if r.is_write_operation()]
 
-        summary_parts = [f"{'Function' if return_type else 'Procedure'} {name}"]
+        obj_type = "Function" if return_type else "Procedure"
+        summary_parts = [f"{obj_type} {name}"]
+        if parameters:
+            summary_parts[0] += f"({', '.join(p.name for p in parameters[:4])}{'...' if len(parameters) > 4 else ''})"
         if read_tables:
             summary_parts.append(f"reads from {', '.join(read_tables[:3])}")
         if write_tables:
             summary_parts.append(f"writes to {', '.join(write_tables[:3])}")
 
+        desc_parts: list[str] = []
+        if parameters:
+            desc_parts.append(f"{len(parameters)} parameters")
+        if table_refs:
+            desc_parts.append(f"{len(table_refs)} table accesses")
+        if called_procs:
+            desc_parts.append(f"calls {', '.join(called_procs[:3])}")
+
         return {
             "summary": ". ".join(summary_parts),
-            "description": (
-                f"{'Function' if return_type else 'Procedure'} with {len(parameters)} parameters, "
-                f"accessing {len(table_refs)} tables, "
-                f"calling {len(called_procs)} other procedures."
-            ),
+            "description": f"{obj_type} with {', '.join(desc_parts)}." if desc_parts else None,
             "parameterDocs": param_docs,
             "returns": return_type,
             "sideEffects": side_effects,
@@ -477,7 +511,14 @@ class AutoDocGenerator(IDocGenerator):
             return base
 
         # Detect comment language
-        base["commentLanguage"] = _detect_comment_language(raw_sql)
+        lang = _detect_comment_language(raw_sql)
+        base["commentLanguage"] = lang
+
+        # Localize auto-generated description if comments are not in English
+        if lang != "en" and base.get("description"):
+            base["description"] = _localize_description(
+                base["description"], lang,
+            )
 
         # Extract header metadata from SQL comments
         header = _extract_header_metadata(raw_sql)

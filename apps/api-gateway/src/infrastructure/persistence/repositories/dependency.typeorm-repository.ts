@@ -9,6 +9,7 @@ import {
 } from '../../../domain/repositories/dependency.repository';
 import { DependencyOrmEntity } from '../entities/dependency.orm-entity';
 import { ProcedureOrmEntity } from '../entities/procedure.orm-entity';
+import { TableAccessOrmEntity } from '../entities/table-access.orm-entity';
 
 @Injectable()
 export class DependencyTypeOrmRepository implements IDependencyRepository {
@@ -17,6 +18,8 @@ export class DependencyTypeOrmRepository implements IDependencyRepository {
     private readonly repo: Repository<DependencyOrmEntity>,
     @InjectRepository(ProcedureOrmEntity)
     private readonly procRepo: Repository<ProcedureOrmEntity>,
+    @InjectRepository(TableAccessOrmEntity)
+    private readonly tableAccessRepo: Repository<TableAccessOrmEntity>,
   ) {}
 
   async findBySource(sourceId: string): Promise<Dependency[]> {
@@ -109,6 +112,40 @@ export class DependencyTypeOrmRepository implements IDependencyRepository {
         });
       }
       // Skip deps with no target and no external name
+    }
+
+    // Include table accesses as graph edges (reads_from / writes_to)
+    const tableAccesses = await this.tableAccessRepo
+      .createQueryBuilder('ta')
+      .where('ta.procedure_id IN (:...ids)', { ids: procIds })
+      .getMany();
+
+    const OP_TO_DEP: Record<string, string> = {
+      SELECT: 'reads_from', INSERT: 'writes_to', UPDATE: 'writes_to',
+      DELETE: 'writes_to', MERGE: 'writes_to', TRUNCATE: 'writes_to',
+    };
+
+    for (const ta of tableAccesses) {
+      const tableName = ta.fullTableName || ta.tableName;
+      const shortName = tableName.split('.').pop() || tableName;
+      const schema = tableName.includes('.') ? tableName.split('.')[0] : '';
+      const virtualId = `tbl_${tableName.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+
+      if (!nodeMap.has(virtualId)) {
+        nodeMap.set(virtualId, { label: shortName, objectType: 'table', schemaName: schema });
+        nodes.push({
+          id: virtualId, label: shortName, objectType: 'table',
+          schemaName: schema, securityIssueCount: 0,
+        });
+      }
+
+      const depType = OP_TO_DEP[ta.operation] || 'references';
+      const sourceInfo = nodeMap.get(ta.procedureId);
+      edges.push({
+        id: `ta_${ta.id}`, source: ta.procedureId, target: virtualId,
+        dependencyType: depType, isDynamic: ta.isDynamic, confidence: ta.confidence,
+        sourceLabel: sourceInfo?.label || 'unknown', targetLabel: shortName,
+      });
     }
 
     // If rootId specified, BFS to limit depth

@@ -80,6 +80,7 @@ export function PlaygroundPage() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useStudioContext<Tab>('sql-explorer', 'activeTab', 'dependencies');
   const [copied, setCopied] = useState(false);
+  const [editorWidth, setEditorWidth] = useState(50); // percentage
 
   // Procedure picker state
   const { connectionId } = useGlobalConnection();
@@ -258,27 +259,29 @@ export function PlaygroundPage() {
         </SidePanel>
       }
     >
-      <div className="h-full grid grid-cols-1 lg:grid-cols-2 min-h-0 overflow-hidden">
+      <div className="h-full flex min-h-0 overflow-hidden">
         {/* Editor */}
-        <div className="card flex flex-col min-h-0 overflow-hidden">
-          <div className="px-4 py-2 border-b border-surface-200 flex items-center justify-between">
+        <div
+          className="flex flex-col min-h-0 min-w-0 overflow-hidden"
+          style={result ? { flex: `0 0 ${editorWidth}%` } : { flex: '1 1 auto' }}
+        >
+          <div className="px-4 py-2 border-b border-surface-200 flex items-center justify-between flex-none">
             <span className="text-xs font-medium text-surface-500">{t('playground:sqlInput')}</span>
             <span className="text-xs text-surface-400">
               {t('playground:charCount', { current: sql.length.toLocaleString(), lines: sql.split('\n').length })}
             </span>
           </div>
-          <textarea
-            value={sql}
-            onChange={(e) => setSql(e.target.value)}
-            className="flex-1 w-full p-4 bg-transparent font-mono text-sm resize-none focus:outline-none text-surface-800 leading-relaxed"
-            placeholder={t('playground:placeholder')}
-            spellCheck={false}
-            maxLength={500000}
-          />
+          <SqlEditor value={sql} onChange={setSql} placeholder={t('playground:placeholder')} />
         </div>
 
-        {/* Results */}
-        <div className="card flex flex-col min-h-0 overflow-hidden">
+        {/* Resizable divider + Results panel */}
+        {result && (
+          <ResizeDivider onDrag={(delta) => setEditorWidth(w => Math.max(25, Math.min(75, w + delta)))} />
+        )}
+        <div className={cn(
+          'flex flex-col min-h-0 overflow-hidden',
+          result ? 'flex-1 min-w-[250px]' : 'w-0 min-w-0',
+        )}>
           {!result ? (
             <div className="flex-1 flex items-center justify-center text-surface-400">
               <div className="text-center">
@@ -841,6 +844,86 @@ function StepDocItem({ step, depth = 0 }: { step: any; depth?: number }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── SQL Editor with line numbers ── */
+function SqlEditor({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
+  const lines = value.split('\n');
+
+  const handleScroll = () => {
+    if (textareaRef.current && lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+  };
+
+  return (
+    <div className="flex-1 flex min-h-0 overflow-hidden">
+      {/* Line numbers */}
+      <div
+        ref={lineNumbersRef}
+        className="flex-none w-12 overflow-hidden bg-surface-50 dark:bg-surface-900 border-r border-surface-200 select-none"
+      >
+        <div className="py-4 pr-2">
+          {lines.map((_, i) => (
+            <div key={i} className="text-right text-[11px] leading-relaxed font-mono text-surface-400 pr-1">
+              {i + 1}
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Editor */}
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onScroll={handleScroll}
+        className="flex-1 w-full py-4 pl-3 pr-4 bg-transparent font-mono text-sm resize-none focus:outline-none text-surface-800 dark:text-surface-200 leading-relaxed"
+        placeholder={placeholder}
+        spellCheck={false}
+        maxLength={500000}
+      />
+    </div>
+  );
+}
+
+/* ── Resize Divider ── */
+function ResizeDivider({ onDrag }: { onDrag: (deltaPct: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    let lastX = e.clientX;
+    const parentWidth = ref.current?.parentElement?.clientWidth || 1;
+
+    const onMove = (ev: MouseEvent) => {
+      const delta = ((ev.clientX - lastX) / parentWidth) * 100;
+      lastX = ev.clientX;
+      onDrag(delta);
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, [onDrag]);
+
+  return (
+    <div
+      ref={ref}
+      onMouseDown={handleMouseDown}
+      className="w-1 flex-none cursor-col-resize bg-surface-200 hover:bg-brand-400 active:bg-brand-500 transition-colors relative group"
+    >
+      <div className="absolute inset-y-0 -left-1 -right-1" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-surface-300 group-hover:bg-brand-400 transition-colors" />
     </div>
   );
 }

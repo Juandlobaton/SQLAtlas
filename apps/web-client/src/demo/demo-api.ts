@@ -149,6 +149,27 @@ export async function demoFetch(path: string, _options?: RequestInit): Promise<R
       sourceLabel: d.sourceName, targetLabel: d.targetName || d.targetExternalName || 'unknown',
     }));
 
+    // Include table accesses as reads_from / writes_to edges
+    const OP_MAP: Record<string, string> = { SELECT: 'reads_from', INSERT: 'writes_to', UPDATE: 'writes_to', DELETE: 'writes_to', MERGE: 'writes_to', TRUNCATE: 'writes_to' };
+    const connAccesses = (data as any).tableAccesses?.filter((a: any) => a.connectionId === connId) || [];
+    for (const ta of connAccesses) {
+      const tableName = ta.fullTableName || ta.tableName;
+      const shortName = tableName.split('.').pop() || tableName;
+      const schema = tableName.includes('.') ? tableName.split('.')[0] : '';
+      const virtualId = `tbl_${tableName.replace(/[^a-zA-Z0-9_.]/g, '_')}`;
+
+      if (!nodeIds.has(virtualId)) {
+        nodeIds.add(virtualId);
+        nodes.push({ id: virtualId, label: shortName, objectType: 'table', schemaName: schema, complexity: null, securityIssueCount: 0 });
+      }
+
+      edges.push({
+        id: `ta_${ta.procedureId}_${virtualId}`, source: ta.procedureId, target: virtualId,
+        dependencyType: OP_MAP[ta.operation] || 'references', isDynamic: false, confidence: 1,
+        sourceLabel: ta.procedureName || '', targetLabel: shortName,
+      });
+    }
+
     body = ok({
       nodes, edges,
       metadata: { totalNodes: nodes.length, totalEdges: edges.length, maxDepth: 5, rootNodeIds: [], leafNodeIds: [], circularDependencies: [] },
