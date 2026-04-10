@@ -1,6 +1,6 @@
 [build]
-  command = "pnpm build --mode demo"
-  publish = "dist"
+  command = "pnpm install --frozen-lockfile && cd apps/web-client && npx vite build --mode demo"
+  publish = "apps/web-client/dist"
 
 [build.environment]
   VITE_DEMO_MODE = "true"
