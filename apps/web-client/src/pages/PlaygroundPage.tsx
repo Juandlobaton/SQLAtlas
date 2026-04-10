@@ -596,7 +596,7 @@ export function PlaygroundPage() {
                             </thead>
                             <tbody className="divide-y divide-surface-200">
                               {params.map((p, i) => (
-                                <tr key={`param-${(p.name as string) || i}`}>
+                                <tr key={`param-${i}`}>
                                   <td className="px-3 py-2 font-mono text-xs">{p.name as string}</td>
                                   <td className="px-3 py-2 font-mono text-xs text-surface-600">{p.dataType as string}</td>
                                   <td className="px-3 py-2"><span className="badge-info">{p.mode as string}</span></td>
