@@ -89,10 +89,18 @@ export function FlowPage() {
     const map = new Map<string, ProcedureItem>();
     for (const p of procedures) {
       map.set(p.objectName, p);
+      map.set(p.objectName.toLowerCase(), p);
       map.set(p.fullQualifiedName, p);
+      map.set(p.fullQualifiedName.toLowerCase(), p);
     }
     return map;
   }, [procedures]);
+
+  // Refs for stable closure access in callbacks
+  const proceduresRef = useRef(procedures);
+  proceduresRef.current = procedures;
+  const procByNameRef = useRef(procByName);
+  procByNameRef.current = procByName;
 
   // Helper to parse a proc and its children
   const parseProc = useCallback(async (proc: ProcedureItem) => {
@@ -163,22 +171,23 @@ export function FlowPage() {
   const callTree = useMemo(() => {
     if (!selectedProc) return null;
     const pd = parsedData[selectedProc.id];
-    if (!pd) return null;
 
-    const deps = (pd.dependencies || []) as any[];
-    const tables = (pd.tableReferences || []) as any[];
-    const params = (pd.parameters || []) as any[];
+    const deps = (pd?.dependencies || []) as any[];
+    const tables = (pd?.tableReferences || []) as any[];
+    const params = (pd?.parameters || selectedProc.parameters || []) as any[];
 
     return {
       name: selectedProc.objectName,
       schema: selectedProc.schemaName,
       type: selectedProc.objectType,
       params,
-      complexity: pd.complexity,
+      complexity: pd?.complexity ?? (selectedProc.estimatedComplexity
+        ? { cyclomaticComplexity: selectedProc.estimatedComplexity, riskLevel: selectedProc.estimatedComplexity <= 5 ? 'low' : selectedProc.estimatedComplexity <= 10 ? 'moderate' : selectedProc.estimatedComplexity <= 20 ? 'high' : 'critical' }
+        : null),
       tables,
       calls: deps.filter((d: any) => d.dependencyType === 'calls'),
-      security: (pd.securityFindings || []) as any[],
-      autoDoc: pd.autoDoc,
+      security: (pd?.securityFindings || selectedProc.securityFindings || []) as any[],
+      autoDoc: pd?.autoDoc ?? (selectedProc as any).autoDoc ?? null,
     };
   }, [selectedProc, parsedData]);
 
@@ -203,10 +212,9 @@ export function FlowPage() {
     }
   }, [parseProc]);
 
-  // Drill-down: open child SP as a new tab
+  // Drill-down: open child SP as a new tab, keep parent tab
   const handleDrillDown = useCallback(async (childProc: ProcedureItem) => {
     setSelectedProc(childProc);
-    setCallStack([]);
     setOpenTabs(prev => prev.some(t => t.id === childProc.id) ? prev : [...prev, childProc]);
 
     if (!parsedDataRef.current[childProc.id] && childProc.rawDefinition) {
@@ -541,14 +549,30 @@ export function FlowPage() {
                     <PipelineCanvas
                       key={selectedProc?.id}
                       flowTree={flowTree}
-                      onDrillDown={(procName) => {
-                        const shortName = procName.split('.').pop() || procName;
-                        const match = procByName.get(shortName) || procByName.get(procName) ||
-                          procedures.find(p =>
-                            p.objectName.toLowerCase() === shortName.toLowerCase() ||
-                            p.fullQualifiedName.toLowerCase() === procName.toLowerCase()
+                      onDrillDown={(rawName) => {
+                        // Clean: "EXEC Schema.sp_Name @p1, @p2;" → "sp_Name"
+                        const cleaned = rawName
+                          .replace(/^\s*(EXEC(?:UTE)?|CALL|PERFORM)\s+/i, '')
+                          .replace(/\s+@.*$/, '').replace(/\s*[;(].*$/, '').trim();
+                        const shortName = cleaned.split('.').pop() || cleaned;
+                        const nameLower = shortName.toLowerCase();
+                        const fqnLower = cleaned.toLowerCase();
+                        const lookup = procByNameRef.current;
+                        const procs = proceduresRef.current;
+                        const match = lookup.get(shortName) || lookup.get(nameLower) ||
+                          lookup.get(cleaned) || lookup.get(fqnLower) ||
+                          procs.find(p =>
+                            p.objectName.toLowerCase() === nameLower ||
+                            p.fullQualifiedName.toLowerCase() === fqnLower ||
+                            p.objectName.toLowerCase().includes(nameLower) ||
+                            nameLower.includes(p.objectName.toLowerCase())
                           );
-                        if (match) handleSelect(match);
+                        if (match) {
+                          // Open as new tab without losing current
+                          handleDrillDown(match);
+                        } else {
+                          console.warn('[FlowPage] No match for drill-down:', { raw: rawName, cleaned, shortName, procCount: procs.length });
+                        }
                       }}
                     />
                   ) : (
